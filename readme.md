@@ -1,3 +1,3 @@
 # Aurora Adriatic
 
-### Web Platform for Croatian Experiences
+### Leana's Web Platform for Croatian Experiences
