@@ -1,0 +1,44 @@
+---
+globs: *.ts,*.tsx
+---
+
+# Data Validation & Type Safety
+
+## Zod Validation
+
+- **ALWAYS** use Zod for data validation
+- Create schemas for all data structures
+- Validate data at API boundaries and form submissions
+
+## Form Data Handling
+
+- **NEVER** use FormData type directly
+- **ALWAYS** create custom TypeScript interfaces for form data
+- Use Zod schemas to validate and transform form data
+
+## Example Implementation
+
+```typescript
+// ✅ Correct - Custom interface with Zod validation
+import { z } from "zod";
+
+const ContactFormSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  message: z.string().min(10, "Message must be at least 10 characters"),
+});
+
+type ContactFormData = z.infer<typeof ContactFormSchema>;
+
+// ❌ Wrong - Using FormData type
+function handleSubmit(formData: FormData) {
+  // Don't do this
+}
+```
+
+## Data Fetching
+
+- Use `lib/` directory for data fetching functions
+- Implement proper error handling and validation
+- Use TypeScript interfaces for API responses
+- Validate external data with Zod schemas

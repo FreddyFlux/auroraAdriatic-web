@@ -1,0 +1,33 @@
+---
+alwaysApply: true
+---
+
+# Project Architecture & Technology Stack
+
+This is an international web application built with modern best practices.
+
+## Core Technologies
+
+- **NextJS 15** - React framework with App Router
+- **Tailwind CSS** - Utility-first CSS framework for styling
+- **Shadcn/ui** - Component library built on Radix UI primitives
+- **Zod** - TypeScript-first schema validation
+- **Firebase** - Authentication, database, and file storage
+- **Sanity CMS** - Content management and internationalization
+
+## Project Structure
+
+- `aa-nextjs/` - NextJS frontend application
+- `aa-sanity-studio/` - Sanity CMS configuration
+- `lib/` - Data fetching and utility functions
+- `components/` - Reusable UI components
+- `app/` - NextJS App Router pages and layouts
+
+## Key Principles
+
+- Always use Shadcn/ui components for UI elements
+- Always use Zod for data validation
+- Never fetch data on client-side (use Server Components or API routes)
+- User-specific data must be properly secured and isolated
+- Use custom TypeScript interfaces for form data, never FormData type
+- Implement proper internationalization support

@@ -1,0 +1,51 @@
+---
+globs: *.ts,*.tsx
+---
+
+# Code Organization & Best Practices
+
+## Directory Structure
+
+- `lib/` - Data fetching, utilities, and shared logic
+- `components/` - Reusable UI components
+- `app/` - NextJS App Router pages and layouts
+- `utils/` - Helper functions and utilities
+
+## Utility Functions
+
+- Use `lib/utils.ts` for shared utility functions
+- Create specific utility files for different domains
+- Use TypeScript for all utility functions
+- Implement proper error handling
+
+## Data Fetching
+
+- Use `lib/` directory for all data fetching functions
+- Implement proper error handling and loading states
+- Use TypeScript interfaces for API responses
+- Cache data appropriately
+
+## Code Quality
+
+```typescript
+// ✅ Correct - Well-structured utility function
+export async function fetchUserProfile(uid: string): Promise<UserProfile> {
+  try {
+    const doc = await db.collection("users").doc(uid).get();
+    if (!doc.exists) {
+      throw new Error("User not found");
+    }
+    return doc.data() as UserProfile;
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    throw error;
+  }
+}
+```
+
+## Error Handling
+
+- Implement proper error boundaries
+- Use consistent error handling patterns
+- Log errors appropriately
+- Provide user-friendly error messages

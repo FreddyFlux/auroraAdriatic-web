@@ -1,0 +1,43 @@
+---
+globs: *.tsx,*.ts
+---
+
+# NextJS 15 App Router Patterns
+
+## Server Components
+
+- Use Server Components by default for data fetching
+- Only use Client Components when necessary (interactivity, hooks)
+- Implement proper loading and error states
+
+## API Routes
+
+- Use API routes for client-side data needs
+- Implement proper request validation with Zod
+- Use appropriate HTTP methods and status codes
+- Handle errors gracefully
+
+## Routing Structure
+
+```typescript
+// ✅ Correct - App Router structure
+app / layout.tsx; // Root layout
+page.tsx[locale] / layout.tsx; // Home page // Locale-specific layout
+page.tsx; // Localized home page
+about / page.tsx; // About page
+api / users / route.ts; // Users API endpoint
+```
+
+## Performance Optimization
+
+- Use dynamic imports for code splitting
+- Implement proper caching strategies
+- Use NextJS Image component for images
+- Optimize bundle size with proper imports
+
+## TypeScript Configuration
+
+- Use strict TypeScript configuration
+- Implement proper type definitions
+- Use path aliases from [tsconfig.json](mdc:aa-nextjs/tsconfig.json)
+- Leverage TypeScript for better developer experience

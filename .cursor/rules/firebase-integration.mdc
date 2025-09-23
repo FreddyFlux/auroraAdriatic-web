@@ -1,0 +1,43 @@
+---
+globs: *.ts,*.tsx
+---
+
+# Firebase Integration Guidelines
+
+## Firebase Services Usage
+
+- **Authentication** - User management and session handling
+- **Firestore** - Logical data storage and user-specific data
+- **Storage** - File uploads and media management
+- **Security Rules** - Data access control and validation
+
+## Data Storage Strategy
+
+```typescript
+// ✅ Correct - Firebase data structure
+interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  locale: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+// Firestore collection: users/{uid}
+// Security rule: allow read, write: if request.auth.uid == resource.id
+```
+
+## Authentication Flow
+
+- Use Firebase Auth for user authentication
+- Implement proper session management
+- Handle authentication state in Server Components
+- Use Firebase Admin SDK for server-side operations
+
+## File Storage
+
+- Use Firebase Storage for user uploads
+- Implement proper file type validation
+- Use Zod schemas for file metadata
+- Implement proper access controls

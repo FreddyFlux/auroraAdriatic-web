@@ -1,0 +1,51 @@
+---
+globs: *.ts,*.tsx
+---
+
+# Internationalization (i18n) Guidelines
+
+## Sanity CMS Integration
+
+- Use Sanity for content management and translations
+- Store all user-facing text in Sanity with locale support
+- Implement proper locale detection based on user system settings
+
+## Translation Structure
+
+```typescript
+// ✅ Correct - Using Sanity for translations
+import { client } from "@/lib/sanity";
+
+interface Translation {
+  _id: string;
+  key: string;
+  locale: string;
+  value: string;
+}
+
+async function getTranslations(locale: string) {
+  return await client.fetch(
+    `
+    *[_type == "translation" && locale == $locale] {
+      key,
+      value
+    }
+  `,
+    { locale }
+  );
+}
+```
+
+## Locale Detection
+
+- Detect user locale from system settings
+- Fallback to default locale (English)
+- Store locale preference in user profile
+- Use NextJS internationalization features
+
+## Content Management
+
+- All content must be managed through Sanity CMS
+- Implement proper content versioning
+- Use structured content with proper schemas
+- Support multiple content types per locale

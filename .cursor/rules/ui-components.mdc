@@ -1,0 +1,38 @@
+---
+globs: *.tsx,*.ts
+---
+
+# UI Components & Shadcn Guidelines
+
+## Shadcn/ui Usage
+
+- **ALWAYS** use Shadcn/ui components for UI elements
+- Import components from `@/components/ui/` directory
+- Use the established component patterns from [components.json](mdc:aa-nextjs/components.json)
+- Follow the "new-york" style configuration
+
+## Component Structure
+
+```typescript
+// ✅ Correct - Using Shadcn components
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+// ❌ Wrong - Creating custom UI components
+<div className="bg-blue-500 px-4 py-2 rounded">Button</div>;
+```
+
+## Component Guidelines
+
+- Use `cn()` utility from `@/lib/utils` for conditional classes
+- Follow Tailwind CSS utility-first approach
+- Use Lucide React icons (configured in components.json)
+- Implement proper accessibility attributes
+- Use TypeScript for all component props
+
+## Styling
+
+- Use Tailwind CSS classes for styling
+- Leverage CSS variables for theming (configured in globals.css)
+- Use the zinc base color palette
+- Implement dark/light mode support with next-themes

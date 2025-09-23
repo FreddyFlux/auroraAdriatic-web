@@ -1,0 +1,46 @@
+---
+globs: *.ts,*.tsx
+---
+
+# Security & Privacy Guidelines
+
+## Data Access Control
+
+- **User-specific data must NEVER be accessible by other users**
+- Implement proper authentication checks
+- Use Firebase security rules for data access
+- Validate user permissions on every request
+
+## Client-Side Data Fetching
+
+- **NEVER** fetch data on client-side
+- Use NextJS Server Components for data fetching
+- Use API routes for client-side data needs
+- Implement proper server-side validation
+
+## Authentication & Authorization
+
+```typescript
+// ✅ Correct - Server-side authentication check
+import { auth } from "@/lib/firebase-admin";
+
+export async function getServerSideProps(context) {
+  const user = await auth.verifyIdToken(context.req.headers.authorization);
+  if (!user) {
+    return { redirect: { destination: "/login", permanent: false } };
+  }
+  // Fetch user-specific data
+}
+
+// ❌ Wrong - Client-side data fetching
+useEffect(() => {
+  fetch("/api/user-data"); // Don't do this
+}, []);
+```
+
+## Data Validation
+
+- Validate all user inputs with Zod
+- Sanitize data before storing
+- Implement rate limiting for API endpoints
+- Use HTTPS for all communications
