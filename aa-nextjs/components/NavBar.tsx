@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ThemeToggle } from "./theme-toggle";
-import { LogoSwitcher } from "./LogoSwitcher";
+import { LogoSwitcher } from "./logo-switcher";
 import { Button } from "./ui/button";
 
 export default function NavBar() {
