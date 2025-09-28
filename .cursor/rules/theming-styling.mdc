@@ -1,0 +1,233 @@
+---
+globs: *.tsx,*.ts,*.css
+---
+
+# Theming & Styling Guidelines
+
+## Color Schema & Design System
+
+### Primary Color Palette
+
+- **Primary**: Custom brand colors defined in CSS variables
+- **Secondary**: Complementary colors for accents
+- **Neutral**: Zinc-based grayscale for text and backgrounds
+- **Semantic**: Success, warning, error, and info colors
+
+### CSS Variables Structure
+
+```css
+/* ✅ Correct - CSS variables in globals.css */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --primary: 240 5.9% 10%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 240 5.9% 10%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 240 5.9% 10%;
+  /* ... other dark mode variables */
+}
+```
+
+## Dark/Light Mode Implementation
+
+### Theme Provider Setup
+
+```typescript
+// ✅ Correct - Theme provider implementation
+import { ThemeProvider } from "next-themes";
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      {children}
+    </ThemeProvider>
+  );
+}
+```
+
+### Theme-Aware Components
+
+```typescript
+// ✅ Correct - Theme-aware component
+import { useTheme } from "next-themes";
+
+export function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+
+  return (
+    <Button
+      variant="outline"
+      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+    >
+      {theme === "dark" ? "Light" : "Dark"}
+    </Button>
+  );
+}
+```
+
+## Tailwind CSS Best Practices
+
+### Utility-First Approach
+
+- Use Tailwind utilities for styling
+- Leverage CSS variables for theming
+- Implement responsive design with breakpoints
+- Use consistent spacing and typography scales
+
+### Custom Class Patterns
+
+```typescript
+// ✅ Correct - Using Tailwind with custom classes
+<div className="bg-background text-foreground border border-border rounded-lg p-6">
+  <h2 className="text-2xl font-bold text-primary mb-4">Title</h2>
+  <p className="text-muted-foreground">Description</p>
+</div>;
+
+// ✅ Correct - Conditional styling with cn()
+import { cn } from "@/lib/utils";
+
+<Button
+  className={cn(
+    "transition-all duration-200",
+    isActive && "bg-primary text-primary-foreground",
+    isHovered && "scale-105"
+  )}
+>
+  Button
+</Button>;
+```
+
+## Component Styling Guidelines
+
+### Shadcn/ui Integration
+
+- Always use Shadcn/ui components as base
+- Extend components with custom styling when needed
+- Maintain consistency with design system
+- Use proper variant patterns
+
+### Custom Component Styling
+
+```typescript
+// ✅ Correct - Custom component with proper styling
+interface CardProps {
+  variant?: "default" | "outline" | "ghost";
+  className?: string;
+}
+
+export function CustomCard({
+  variant = "default",
+  className,
+  ...props
+}: CardProps) {
+  return (
+    <div
+      className={cn(
+        "rounded-lg border bg-card text-card-foreground shadow-sm",
+        {
+          "border-border": variant === "default",
+          "border-dashed": variant === "outline",
+          "border-transparent": variant === "ghost",
+        },
+        className
+      )}
+      {...props}
+    />
+  );
+}
+```
+
+## Responsive Design
+
+### Breakpoint Strategy
+
+- **Mobile**: Default styles (no prefix)
+- **Tablet**: `md:` prefix (768px+)
+- **Desktop**: `lg:` prefix (1024px+)
+- **Large Desktop**: `xl:` prefix (1280px+)
+
+### Responsive Patterns
+
+```typescript
+// ✅ Correct - Responsive design patterns
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  <Card className="p-4 md:p-6 lg:p-8">
+    <h3 className="text-lg md:text-xl lg:text-2xl font-bold">Title</h3>
+    <p className="text-sm md:text-base text-muted-foreground">Description</p>
+  </Card>
+</div>
+```
+
+## Animation & Transitions
+
+### Transition Guidelines
+
+- Use consistent transition durations
+- Implement smooth hover effects
+- Add loading states with animations
+- Use CSS transforms for performance
+
+### Animation Patterns
+
+```typescript
+// ✅ Correct - Animation implementation
+<div className="transition-all duration-200 hover:scale-105 hover:shadow-lg">
+  <Button className="transition-colors duration-200 hover:bg-primary/90">
+    Animated Button
+  </Button>
+</div>
+```
+
+## Accessibility & Styling
+
+### Focus States
+
+- Implement visible focus indicators
+- Use consistent focus ring styling
+- Ensure proper color contrast ratios
+- Support keyboard navigation
+
+### Color Contrast
+
+- Maintain WCAG AA compliance
+- Test color combinations in both themes
+- Use semantic color names
+- Provide alternative text for color-coded information
+
+## Performance Considerations
+
+### CSS Optimization
+
+- Use Tailwind's purging for production
+- Minimize custom CSS
+- Leverage CSS variables for theming
+- Use efficient selectors
+
+### Bundle Size
+
+- Import only needed Tailwind utilities
+- Use dynamic imports for heavy components
+- Optimize images and assets
+- Implement proper code splitting

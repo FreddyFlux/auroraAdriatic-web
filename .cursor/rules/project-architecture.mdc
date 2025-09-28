@@ -4,30 +4,74 @@ alwaysApply: true
 
 # Project Architecture & Technology Stack
 
-This is an international web application built with modern best practices.
+This is an international web application built with modern best practices and enterprise-grade organization.
 
 ## Core Technologies
 
 - **NextJS 15** - React framework with App Router
-- **Tailwind CSS** - Utility-first CSS framework for styling
+- **Tailwind CSS** - Utility-first CSS framework with custom color schema
 - **Shadcn/ui** - Component library built on Radix UI primitives
 - **Zod** - TypeScript-first schema validation
 - **Firebase** - Authentication, database, and file storage
 - **Sanity CMS** - Content management and internationalization
+- **next-themes** - Dark/light mode theming system
 
 ## Project Structure
 
-- `aa-nextjs/` - NextJS frontend application
-- `aa-sanity-studio/` - Sanity CMS configuration
-- `lib/` - Data fetching and utility functions
-- `components/` - Reusable UI components
-- `app/` - NextJS App Router pages and layouts
+```
+auroraAdriatic-web/
+├── aa-nextjs/                    # NextJS frontend application
+│   ├── app/                      # App Router pages and layouts
+│   │   ├── [lang]/              # Internationalized routes
+│   │   │   ├── (auth)/          # Authentication route group
+│   │   │   ├── admin/           # Admin dashboard routes
+│   │   │   └── api/             # API routes
+│   │   └── globals.css          # Global styles and CSS variables
+│   ├── components/              # Reusable UI components
+│   │   ├── ui/                  # Shadcn/ui components
+│   │   └── [feature]/           # Feature-specific components
+│   ├── lib/                     # Data fetching, utilities, and shared logic
+│   │   ├── firebase.ts          # Firebase configuration
+│   │   ├── sanity.ts            # Sanity CMS configuration
+│   │   └── utils.ts             # Shared utility functions
+│   ├── context/                 # React context providers
+│   ├── validation/              # Zod schemas and validation
+│   └── middleware.ts            # NextJS middleware
+├── aa-sanity-studio/            # Sanity CMS configuration
+│   ├── schemaTypes/             # Content schemas
+│   └── sanity.config.ts         # Sanity configuration
+└── .cursor/rules/               # Cursor IDE rules and guidelines
+```
+
+## Architecture Principles
+
+### Separation of Concerns
+
+- **Frontend (aa-nextjs/)**: UI, user interactions, and client-side logic
+- **CMS (aa-sanity-studio/)**: Content management and internationalization
+- **Backend Services**: Firebase (auth, database, storage) + Sanity (content)
+
+### Data Flow Architecture
+
+- **Server Components**: Data fetching from Firebase/Sanity
+- **Client Components**: User interactions and state management
+- **API Routes**: Client-side data needs and external integrations
+- **Middleware**: Authentication, internationalization, and routing
+
+### Internationalization Strategy
+
+- **Routing**: `[lang]` dynamic segments for locale-specific routes
+- **Content**: Sanity CMS with document internationalization
+- **UI**: next-intl for UI translations and locale detection
+- **Fallback**: English as default locale with graceful degradation
 
 ## Key Principles
 
-- Always use Shadcn/ui components for UI elements
-- Always use Zod for data validation
-- Never fetch data on client-side (use Server Components or API routes)
-- User-specific data must be properly secured and isolated
-- Use custom TypeScript interfaces for form data, never FormData type
-- Implement proper internationalization support
+- **Always use Shadcn/ui components** for UI elements
+- **Always use Zod** for data validation and type safety
+- **Never fetch data on client-side** (use Server Components or API routes)
+- **User-specific data must be properly secured** and isolated
+- **Use custom TypeScript interfaces** for form data, never FormData type
+- **Implement proper internationalization** support with Sanity CMS
+- **Follow the established color schema** and theming system
+- **Maintain consistent code organization** across all features

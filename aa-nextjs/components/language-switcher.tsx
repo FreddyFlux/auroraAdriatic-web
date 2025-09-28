@@ -40,7 +40,7 @@ export default function LanguageSwitcher({
         <Button
           variant="outline"
           size="sm"
-          className="flex items-center space-x-1 hover:bg-primary hover:text-primary-foreground dark:hover:bg-primary/20 dark:hover:text-primary transition-colors"
+          className="flex items-center space-x-1"
         >
           <span>{currentLanguage?.flag}</span>
           <span className="hidden sm:inline">{currentLanguage?.name}</span>
@@ -52,10 +52,14 @@ export default function LanguageSwitcher({
           <DropdownMenuItem
             key={lang.code}
             onClick={() => handleLanguageChange(lang.code)}
-            className="flex items-center space-x-2 cursor-pointer hover:bg-primary hover:text-primary-foreground dark:hover:bg-primary/20 dark:hover:text-primary focus:bg-primary focus:text-primary-foreground dark:focus:bg-primary/20 dark:focus:text-primary transition-colors"
+            className="flex items-center space-x-2 cursor-pointer"
           >
             <span>{lang.flag}</span>
-            <span className={currentLang === lang.code ? "font-medium" : ""}>
+            <span
+              className={
+                currentLang === lang.code ? "font-medium" : "font-normal"
+              }
+            >
               {lang.name}
             </span>
           </DropdownMenuItem>

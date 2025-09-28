@@ -1,0 +1,385 @@
+---
+globs: *.tsx,*.ts
+---
+
+# NextJS App Router Patterns & Best Practices
+
+## Route Structure & Organization
+
+### Internationalized Routing
+
+- Use `[lang]` dynamic segments for locale-specific routes
+- Implement proper locale detection and fallbacks
+- Support multiple languages (English, Norwegian, Croatian)
+- Handle locale-specific content and navigation
+
+### Route Groups & Organization
+
+```
+app/
+├── [lang]/
+│   ├── (auth)/              # Authentication route group
+│   │   ├── login/
+│   │   └── register/
+│   ├── admin/               # Admin dashboard routes
+│   │   ├── event/
+│   │   │   ├── new/
+│   │   │   └── edit/[eventId]/
+│   │   └── page.tsx
+│   ├── about/
+│   ├── contact/
+│   ├── account/
+│   ├── layout.tsx           # Locale-specific layout
+│   └── page.tsx             # Home page
+├── api/                     # API routes
+│   ├── refresh-token/
+│   └── set-admin-claims/
+├── globals.css
+├── layout.tsx               # Root layout
+└── not-found.tsx
+```
+
+## Layout Patterns
+
+### Nested Layouts
+
+```typescript
+// ✅ Correct - Root layout with providers
+// app/layout.tsx
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
+        <ThemeProvider>
+          <LanguageProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </LanguageProvider>
+        </ThemeProvider>
+      </body>
+    </html>
+  );
+}
+
+// ✅ Correct - Locale-specific layout
+// app/[lang]/layout.tsx
+export default function LocaleLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: { lang: string };
+}) {
+  return (
+    <div className="min-h-screen bg-background">
+      <NavBar currentLang={params.lang} />
+      <main className="container mx-auto px-4 py-8">{children}</main>
+      <Footer />
+    </div>
+  );
+}
+```
+
+### Route Groups
+
+```typescript
+// ✅ Correct - Authentication route group
+// app/[lang]/(auth)/layout.tsx
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-muted">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Authentication</CardTitle>
+        </CardHeader>
+        <CardContent>{children}</CardContent>
+      </Card>
+    </div>
+  );
+}
+```
+
+## Page Component Patterns
+
+### Server Components (Default)
+
+```typescript
+// ✅ Correct - Server Component for data fetching
+// app/[lang]/events/page.tsx
+import { getEvents } from "@/lib/events";
+import { auth } from "@/lib/firebase-admin";
+
+export default async function EventsPage({
+  params,
+}: {
+  params: { lang: string };
+}) {
+  const user = await auth.getCurrentUser();
+  const events = await getEvents(user.uid);
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">Events</h1>
+      <EventsList events={events} />
+    </div>
+  );
+}
+```
+
+### Client Components (When Needed)
+
+```typescript
+// ✅ Correct - Client Component for interactivity
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+
+export default function InteractivePage() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <Button onClick={() => setCount(count + 1)}>Increment</Button>
+    </div>
+  );
+}
+```
+
+## API Routes
+
+### Route Handlers
+
+```typescript
+// ✅ Correct - API route implementation
+// app/api/events/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/firebase-admin";
+import { createEventSchema } from "@/validation/eventSchema";
+
+export async function GET(request: NextRequest) {
+  try {
+    const user = await auth.getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const events = await getEvents(user.uid);
+    return NextResponse.json(events);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const user = await auth.getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const validatedData = createEventSchema.parse(body);
+
+    const event = await createEvent(user.uid, validatedData);
+    return NextResponse.json(event, { status: 201 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Validation Error", details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Middleware Patterns
+
+### Authentication & Internationalization
+
+```typescript
+// ✅ Correct - Middleware implementation
+// middleware.ts
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/firebase-admin";
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Handle internationalization
+  const pathnameIsMissingLocale = locales.every(
+    (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
+  );
+
+  if (pathnameIsMissingLocale) {
+    const locale = getLocale(request);
+    return NextResponse.redirect(new URL(`/${locale}${pathname}`, request.url));
+  }
+
+  // Handle authentication for protected routes
+  if (pathname.startsWith("/admin")) {
+    const token = request.cookies.get("auth-token")?.value;
+
+    if (!token) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+
+    try {
+      await auth.verifyIdToken(token);
+    } catch (error) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+};
+```
+
+## Dynamic Routes & Parameters
+
+### Dynamic Segments
+
+```typescript
+// ✅ Correct - Dynamic route with parameters
+// app/[lang]/events/[eventId]/page.tsx
+export default async function EventPage({
+  params,
+}: {
+  params: { lang: string; eventId: string };
+}) {
+  const event = await getEvent(params.eventId);
+
+  if (!event) {
+    notFound();
+  }
+
+  return (
+    <div>
+      <h1>{event.title}</h1>
+      <p>{event.description}</p>
+    </div>
+  );
+}
+```
+
+### Search Parameters
+
+```typescript
+// ✅ Correct - Handling search parameters
+// app/[lang]/events/page.tsx
+export default async function EventsPage({
+  params,
+  searchParams,
+}: {
+  params: { lang: string };
+  searchParams: { category?: string; search?: string };
+}) {
+  const events = await getEvents({
+    category: searchParams.category,
+    search: searchParams.search,
+  });
+
+  return <EventsList events={events} />;
+}
+```
+
+## Error Handling
+
+### Error Pages
+
+```typescript
+// ✅ Correct - Custom error page
+// app/[lang]/error.tsx
+"use client";
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <h2 className="text-2xl font-bold mb-4">Something went wrong!</h2>
+      <Button onClick={reset}>Try again</Button>
+    </div>
+  );
+}
+
+// ✅ Correct - Not found page
+// app/not-found.tsx
+export default function NotFound() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <h2 className="text-2xl font-bold mb-4">Not Found</h2>
+      <p className="text-muted-foreground mb-4">
+        The page you're looking for doesn't exist.
+      </p>
+      <Button asChild>
+        <Link href="/">Go Home</Link>
+      </Button>
+    </div>
+  );
+}
+```
+
+## Performance Optimization
+
+### Loading States
+
+```typescript
+// ✅ Correct - Loading UI
+// app/[lang]/events/loading.tsx
+export default function Loading() {
+  return (
+    <div className="space-y-4">
+      <div className="h-8 bg-muted animate-pulse rounded" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-48 bg-muted animate-pulse rounded" />
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+### Suspense Boundaries
+
+```typescript
+// ✅ Correct - Suspense implementation
+import { Suspense } from "react";
+
+export default function EventsPage() {
+  return (
+    <div>
+      <h1>Events</h1>
+      <Suspense fallback={<EventsLoading />}>
+        <EventsList />
+      </Suspense>
+    </div>
+  );
+}
+```

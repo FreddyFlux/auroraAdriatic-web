@@ -7,9 +7,9 @@ const supportedLocales = ["en", "no", "hr"];
 
 interface LangLayoutProps {
   children: ReactNode;
-  params: {
+  params: Promise<{
     lang: string;
-  };
+  }>;
 }
 
 export async function generateStaticParams() {
@@ -18,8 +18,11 @@ export async function generateStaticParams() {
   }));
 }
 
-export default function LangLayout({ children, params }: LangLayoutProps) {
-  const { lang } = params;
+export default async function LangLayout({
+  children,
+  params,
+}: LangLayoutProps) {
+  const { lang } = await params;
 
   // Validate that the incoming `lang` parameter is valid
   if (!supportedLocales.includes(lang)) {
@@ -39,9 +42,9 @@ export default function LangLayout({ children, params }: LangLayoutProps) {
 export async function generateMetadata({
   params,
 }: {
-  params: { lang: string };
+  params: Promise<{ lang: string }>;
 }) {
-  const { lang } = params;
+  const { lang } = await params;
 
   const titles = {
     en: "Aurora Adriatic",

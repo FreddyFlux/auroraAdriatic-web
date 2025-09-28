@@ -1,0 +1,418 @@
+---
+globs: *.tsx,*.ts,*.css
+---
+
+# Performance Optimization Guidelines
+
+## NextJS Performance Features
+
+### App Router Optimizations
+
+- Use Server Components by default for better performance
+- Implement proper loading states and Suspense boundaries
+- Leverage NextJS built-in caching strategies
+- Use dynamic imports for code splitting
+
+### Image Optimization
+
+```typescript
+// ✅ Correct - Optimized image usage
+import Image from "next/image";
+
+export function EventImage({ src, alt, priority = false }: ImageProps) {
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={400}
+      height={300}
+      priority={priority}
+      className="rounded-lg object-cover"
+      placeholder="blur"
+      blurDataURL="data:image/jpeg;base64,..."
+    />
+  );
+}
+
+// ❌ Wrong - Unoptimized image
+<img src="/event-image.jpg" alt="Event" />;
+```
+
+### Font Optimization
+
+```typescript
+// ✅ Correct - Font optimization
+import { Inter } from "next/font/google";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" className={inter.variable}>
+      <body className={inter.className}>{children}</body>
+    </html>
+  );
+}
+```
+
+## Code Splitting & Lazy Loading
+
+### Dynamic Imports
+
+```typescript
+// ✅ Correct - Dynamic imports for heavy components
+import dynamic from "next/dynamic";
+
+const HeavyChart = dynamic(() => import("./HeavyChart"), {
+  loading: () => <ChartSkeleton />,
+  ssr: false, // Only load on client if needed
+});
+
+const AdminDashboard = dynamic(() => import("./AdminDashboard"), {
+  loading: () => <DashboardSkeleton />,
+});
+
+// ✅ Correct - Conditional loading
+const EventForm = dynamic(() => import("./EventForm"), {
+  loading: () => <FormSkeleton />,
+});
+```
+
+### Route-Based Code Splitting
+
+```typescript
+// ✅ Correct - Route-based splitting
+// app/[lang]/admin/page.tsx
+import dynamic from "next/dynamic";
+
+const AdminDashboard = dynamic(() => import("@/components/AdminDashboard"), {
+  loading: () => <div>Loading admin dashboard...</div>,
+});
+
+export default function AdminPage() {
+  return <AdminDashboard />;
+}
+```
+
+## Caching Strategies
+
+### NextJS Caching
+
+```typescript
+// ✅ Correct - Server Component caching
+export async function getEvents(): Promise<Event[]> {
+  const events = await fetch("https://api.example.com/events", {
+    next: { revalidate: 3600 }, // Cache for 1 hour
+  });
+
+  return events.json();
+}
+
+// ✅ Correct - Static generation
+export async function generateStaticParams() {
+  const events = await getEvents();
+
+  return events.map((event) => ({
+    id: event.id,
+  }));
+}
+```
+
+### Client-Side Caching
+
+```typescript
+// ✅ Correct - React Query for client-side caching
+import { useQuery } from "@tanstack/react-query";
+
+export function useEvents() {
+  return useQuery({
+    queryKey: ["events"],
+    queryFn: getEvents,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+```
+
+## Bundle Optimization
+
+### Import Optimization
+
+```typescript
+// ✅ Correct - Tree-shakable imports
+import { Button } from "@/components/ui/button";
+import { Calendar } from "lucide-react";
+
+// ❌ Wrong - Importing entire libraries
+import * as Icons from "lucide-react";
+import { Button, Card, Input } from "@/components/ui";
+```
+
+### Bundle Analysis
+
+```typescript
+// ✅ Correct - Bundle analysis setup
+// next.config.ts
+const nextConfig = {
+  experimental: {
+    bundlePagesRouterDependencies: true,
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+      };
+    }
+    return config;
+  },
+};
+```
+
+## Database & API Optimization
+
+### Database Queries
+
+```typescript
+// ✅ Correct - Optimized database queries
+export async function getEvents(userId: string): Promise<Event[]> {
+  const events = await db
+    .collection("events")
+    .where("userId", "==", userId)
+    .orderBy("createdAt", "desc")
+    .limit(20) // Limit results
+    .get();
+
+  return events.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Event[];
+}
+
+// ✅ Correct - Pagination
+export async function getEventsPaginated(
+  userId: string,
+  lastDoc?: DocumentSnapshot
+): Promise<{ events: Event[]; lastDoc: DocumentSnapshot | null }> {
+  let query = db
+    .collection("events")
+    .where("userId", "==", userId)
+    .orderBy("createdAt", "desc")
+    .limit(10);
+
+  if (lastDoc) {
+    query = query.startAfter(lastDoc);
+  }
+
+  const snapshot = await query.get();
+  const events = snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Event[];
+
+  return {
+    events,
+    lastDoc: snapshot.docs[snapshot.docs.length - 1] || null,
+  };
+}
+```
+
+### API Route Optimization
+
+```typescript
+// ✅ Correct - Optimized API route
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const page = parseInt(searchParams.get("page") || "1");
+  const limit = parseInt(searchParams.get("limit") || "10");
+
+  // Use database pagination instead of fetching all data
+  const events = await getEventsPaginated(page, limit);
+
+  return NextResponse.json({
+    events: events.data,
+    pagination: {
+      page,
+      limit,
+      hasMore: events.hasMore,
+    },
+  });
+}
+```
+
+## React Performance
+
+### Memoization
+
+```typescript
+// ✅ Correct - Memoization for expensive calculations
+import { useMemo, useCallback } from "react";
+
+export function EventList({ events, filters }: EventListProps) {
+  const filteredEvents = useMemo(() => {
+    return events.filter((event) => {
+      if (filters.category && event.category !== filters.category) {
+        return false;
+      }
+      if (
+        filters.search &&
+        !event.title.toLowerCase().includes(filters.search.toLowerCase())
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [events, filters]);
+
+  const handleEventClick = useCallback((eventId: string) => {
+    // Handle event click
+  }, []);
+
+  return (
+    <div>
+      {filteredEvents.map((event) => (
+        <EventCard key={event.id} event={event} onClick={handleEventClick} />
+      ))}
+    </div>
+  );
+}
+```
+
+### Virtual Scrolling
+
+```typescript
+// ✅ Correct - Virtual scrolling for large lists
+import { FixedSizeList as List } from "react-window";
+
+export function VirtualizedEventList({ events }: { events: Event[] }) {
+  const Row = ({
+    index,
+    style,
+  }: {
+    index: number;
+    style: React.CSSProperties;
+  }) => (
+    <div style={style}>
+      <EventCard event={events[index]} />
+    </div>
+  );
+
+  return (
+    <List height={600} itemCount={events.length} itemSize={120} width="100%">
+      {Row}
+    </List>
+  );
+}
+```
+
+## CSS Performance
+
+### CSS Optimization
+
+```css
+/* ✅ Correct - Optimized CSS */
+.event-card {
+  /* Use transform instead of changing layout properties */
+  transform: translateZ(0);
+  will-change: transform;
+  transition: transform 0.2s ease;
+}
+
+.event-card:hover {
+  transform: translateY(-2px);
+}
+
+/* ❌ Wrong - Layout-triggering properties */
+.event-card:hover {
+  margin-top: -2px; /* Triggers layout recalculation */
+}
+```
+
+### Critical CSS
+
+```typescript
+// ✅ Correct - Critical CSS inlining
+// app/layout.tsx
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <head>
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+            /* Critical CSS for above-the-fold content */
+            .hero { height: 100vh; }
+            .navbar { position: fixed; top: 0; }
+          `,
+          }}
+        />
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+## Monitoring & Analytics
+
+### Performance Monitoring
+
+```typescript
+// ✅ Correct - Performance monitoring
+import { getCLS, getFID, getFCP, getLCP, getTTFB } from "web-vitals";
+
+export function reportWebVitals(metric: any) {
+  console.log(metric);
+
+  // Send to analytics service
+  if (metric.label === "web-vital") {
+    // Send to your analytics service
+  }
+}
+
+// In _app.tsx or layout.tsx
+export { reportWebVitals };
+```
+
+### Bundle Analysis
+
+```bash
+# ✅ Correct - Bundle analysis commands
+npm run build
+npm run analyze
+
+# Or with custom script
+npx @next/bundle-analyzer
+```
+
+## Best Practices Summary
+
+### Do's
+
+- Use Server Components by default
+- Implement proper loading states
+- Use dynamic imports for heavy components
+- Optimize images with NextJS Image component
+- Implement proper caching strategies
+- Use memoization for expensive calculations
+- Monitor performance with web vitals
+
+### Don'ts
+
+- Don't fetch data on client-side unnecessarily
+- Don't import entire libraries when you only need specific functions
+- Don't use layout-triggering CSS properties for animations
+- Don't forget to implement proper error boundaries
+- Don't ignore bundle size and performance metrics

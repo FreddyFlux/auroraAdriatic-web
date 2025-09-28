@@ -4,31 +4,116 @@ globs: *.ts,*.tsx
 
 # Code Organization & Best Practices
 
-## Directory Structure
+## Directory Structure & Naming Conventions
+
+### Core Directories
 
 - `lib/` - Data fetching, utilities, and shared logic
 - `components/` - Reusable UI components
 - `app/` - NextJS App Router pages and layouts
-- `utils/` - Helper functions and utilities
+- `context/` - React context providers
+- `validation/` - Zod schemas and validation
 
-## Utility Functions
+### File Naming Conventions
 
-- Use `lib/utils.ts` for shared utility functions
-- Create specific utility files for different domains
-- Use TypeScript for all utility functions
-- Implement proper error handling
+- **Components**: PascalCase (e.g., `UserProfile.tsx`)
+- **Utilities**: camelCase (e.g., `formatDate.ts`)
+- **Hooks**: camelCase with "use" prefix (e.g., `useAuth.ts`)
+- **Types**: PascalCase with descriptive names (e.g., `UserProfile.ts`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `API_ENDPOINTS.ts`)
 
-## Data Fetching
+### Component Organization
 
-- Use `lib/` directory for all data fetching functions
-- Implement proper error handling and loading states
-- Use TypeScript interfaces for API responses
-- Cache data appropriately
+```
+components/
+├── ui/                    # Shadcn/ui components
+├── [feature]/            # Feature-specific components
+│   ├── [Feature]Card.tsx
+│   ├── [Feature]Form.tsx
+│   └── [Feature]List.tsx
+├── layout/               # Layout components
+└── common/               # Shared components
+```
 
-## Code Quality
+## Utility Functions & Helpers
+
+### Core Utilities (`lib/utils.ts`)
+
+- Use `cn()` for conditional class merging
+- Implement common formatting functions
+- Add type-safe utility functions
+- Keep utilities pure and testable
+
+### Domain-Specific Utilities
 
 ```typescript
-// ✅ Correct - Well-structured utility function
+// ✅ Correct - Domain-specific utility file
+// lib/dateUtils.ts
+export function formatEventDate(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date);
+}
+
+// lib/validationUtils.ts
+export function validateEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+```
+
+## Data Fetching Architecture
+
+### Server-Side Data Fetching
+
+- Use Server Components for initial data loading
+- Implement proper error handling and loading states
+- Use TypeScript interfaces for all data structures
+- Cache data appropriately with NextJS caching
+
+### Client-Side Data Management
+
+- Use React Query/SWR for client-side data fetching
+- Implement optimistic updates where appropriate
+- Handle loading and error states consistently
+
+### Data Fetching Patterns
+
+```typescript
+// ✅ Correct - Server Component data fetching
+import { auth } from "@/lib/firebase-admin";
+import { getEvents } from "@/lib/events";
+
+export default async function EventsPage() {
+  const user = await auth.getCurrentUser();
+  const events = await getEvents(user.uid);
+
+  return <EventsList events={events} />;
+}
+
+// ✅ Correct - API route for client-side needs
+// app/api/events/route.ts
+export async function GET(request: Request) {
+  const user = await auth.getCurrentUser();
+  const events = await getEvents(user.uid);
+  return Response.json(events);
+}
+```
+
+## Code Quality Standards
+
+### TypeScript Best Practices
+
+- Use strict TypeScript configuration
+- Implement proper type definitions
+- Use path aliases consistently
+- Leverage TypeScript for better developer experience
+
+### Error Handling Patterns
+
+```typescript
+// ✅ Correct - Comprehensive error handling
 export async function fetchUserProfile(uid: string): Promise<UserProfile> {
   try {
     const doc = await db.collection("users").doc(uid).get();
@@ -38,14 +123,40 @@ export async function fetchUserProfile(uid: string): Promise<UserProfile> {
     return doc.data() as UserProfile;
   } catch (error) {
     console.error("Error fetching user profile:", error);
-    throw error;
+    throw new Error("Failed to fetch user profile");
   }
+}
+
+// ✅ Correct - Error boundary implementation
+export function ErrorBoundary({ children }: { children: React.ReactNode }) {
+  return <ErrorBoundaryProvider>{children}</ErrorBoundaryProvider>;
 }
 ```
 
-## Error Handling
+## Performance Optimization
 
-- Implement proper error boundaries
-- Use consistent error handling patterns
-- Log errors appropriately
-- Provide user-friendly error messages
+### Code Splitting
+
+- Use dynamic imports for large components
+- Implement lazy loading for non-critical features
+- Split vendor bundles appropriately
+
+### Caching Strategies
+
+- Use NextJS built-in caching for static data
+- Implement proper cache invalidation
+- Use React Query for client-side caching
+
+## Testing Strategy
+
+### Unit Tests
+
+- Test utility functions thoroughly
+- Mock external dependencies
+- Use Jest and React Testing Library
+
+### Integration Tests
+
+- Test component interactions
+- Test API endpoints
+- Test authentication flows

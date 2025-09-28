@@ -7,8 +7,8 @@ interface HomeProps {
   };
 }
 
-export default function Home({ params }: HomeProps) {
-  const { lang } = params;
+export default async function Home({ params }: HomeProps) {
+  const { lang } = await params;
 
   return (
     <>

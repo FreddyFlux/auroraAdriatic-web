@@ -4,41 +4,318 @@ globs: *.ts,*.tsx
 
 # Data Validation & Type Safety
 
-## Zod Validation
+## Zod Validation Strategy
 
 - **ALWAYS** use Zod for data validation
 - Create schemas for all data structures
 - Validate data at API boundaries and form submissions
+- Use Zod for both client and server-side validation
+- Implement proper error handling and user feedback
+
+## Schema Organization
+
+### Schema File Structure
+
+```
+validation/
+├── eventSchema.ts          # Event-related schemas
+├── userSchema.ts           # User-related schemas
+├── authSchema.ts           # Authentication schemas
+├── commonSchema.ts         # Shared/common schemas
+└── index.ts               # Export all schemas
+```
+
+### Schema Patterns
+
+```typescript
+// ✅ Correct - Comprehensive schema with validation
+import { z } from "zod";
+
+export const EventSchema = z.object({
+  id: z.string().optional(),
+  title: z
+    .string()
+    .min(2, "Title must be at least 2 characters")
+    .max(100, "Title must be less than 100 characters"),
+  description: z
+    .string()
+    .min(10, "Description must be at least 10 characters")
+    .max(500, "Description must be less than 500 characters"),
+  date: z.date({
+    required_error: "Event date is required",
+    invalid_type_error: "Invalid date format",
+  }),
+  location: z
+    .string()
+    .min(2, "Location must be at least 2 characters")
+    .max(100, "Location must be less than 100 characters"),
+  maxParticipants: z
+    .number()
+    .int("Must be a whole number")
+    .min(1, "Must allow at least 1 participant")
+    .max(1000, "Cannot exceed 1000 participants"),
+  category: z.enum(["sailing", "yachting", "adventure", "cultural"]),
+  status: z.enum(["draft", "published", "cancelled"]).default("draft"),
+  tags: z.array(z.string()).max(10, "Maximum 10 tags allowed").optional(),
+  images: z
+    .array(z.string().url("Invalid image URL"))
+    .max(5, "Maximum 5 images")
+    .optional(),
+});
+
+export type Event = z.infer<typeof EventSchema>;
+
+// ✅ Correct - Form-specific schema
+export const CreateEventSchema = EventSchema.omit({ id: true });
+export type CreateEventData = z.infer<typeof CreateEventSchema>;
+
+// ✅ Correct - Update schema (partial)
+export const UpdateEventSchema = EventSchema.partial().omit({ id: true });
+export type UpdateEventData = z.infer<typeof UpdateEventSchema>;
+```
 
 ## Form Data Handling
 
-- **NEVER** use FormData type directly
-- **ALWAYS** create custom TypeScript interfaces for form data
-- Use Zod schemas to validate and transform form data
-
-## Example Implementation
+### Form Validation Patterns
 
 ```typescript
-// ✅ Correct - Custom interface with Zod validation
-import { z } from "zod";
+// ✅ Correct - React Hook Form with Zod
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  CreateEventSchema,
+  type CreateEventData,
+} from "@/validation/eventSchema";
 
-const ContactFormSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  message: z.string().min(10, "Message must be at least 10 characters"),
-});
+export function EventForm({
+  onSubmit,
+}: {
+  onSubmit: (data: CreateEventData) => void;
+}) {
+  const form = useForm<CreateEventData>({
+    resolver: zodResolver(CreateEventSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      date: new Date(),
+      location: "",
+      maxParticipants: 20,
+      category: "sailing",
+      status: "draft",
+    },
+  });
 
-type ContactFormData = z.infer<typeof ContactFormSchema>;
+  const handleSubmit = (data: CreateEventData) => {
+    try {
+      const validatedData = CreateEventSchema.parse(data);
+      onSubmit(validatedData);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Handle validation errors
+        console.error("Validation errors:", error.errors);
+      }
+    }
+  };
 
-// ❌ Wrong - Using FormData type
-function handleSubmit(formData: FormData) {
-  // Don't do this
+  return (
+    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <div>
+        <Label htmlFor="title">Title</Label>
+        <Input
+          id="title"
+          {...form.register("title")}
+          className={form.formState.errors.title ? "border-destructive" : ""}
+        />
+        {form.formState.errors.title && (
+          <p className="text-sm text-destructive">
+            {form.formState.errors.title.message}
+          </p>
+        )}
+      </div>
+      {/* ... other form fields */}
+    </form>
+  );
 }
 ```
 
-## Data Fetching
+### Server-Side Validation
 
-- Use `lib/` directory for data fetching functions
-- Implement proper error handling and validation
-- Use TypeScript interfaces for API responses
-- Validate external data with Zod schemas
+```typescript
+// ✅ Correct - API route validation
+import { NextRequest, NextResponse } from "next/server";
+import { CreateEventSchema } from "@/validation/eventSchema";
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+
+    // Validate request body
+    const validatedData = CreateEventSchema.parse(body);
+
+    // Process validated data
+    const event = await createEvent(validatedData);
+
+    return NextResponse.json(event, { status: 201 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: "Validation Error",
+          details: error.errors.map((err) => ({
+            field: err.path.join("."),
+            message: err.message,
+          })),
+        },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Type Safety Patterns
+
+### Type Guards
+
+```typescript
+// ✅ Correct - Type guard functions
+export function isEvent(obj: unknown): obj is Event {
+  return EventSchema.safeParse(obj).success;
+}
+
+export function isCreateEventData(obj: unknown): obj is CreateEventData {
+  return CreateEventSchema.safeParse(obj).success;
+}
+
+// Usage
+if (isEvent(data)) {
+  // data is now typed as Event
+  console.log(data.title);
+}
+```
+
+### API Response Types
+
+```typescript
+// ✅ Correct - API response types
+export interface ApiResponse<T> {
+  data: T;
+  success: boolean;
+  message?: string;
+}
+
+export interface ApiError {
+  error: string;
+  details?: Array<{
+    field: string;
+    message: string;
+  }>;
+}
+
+// Usage in API routes
+export async function GET(): Promise<NextResponse<ApiResponse<Event[]>>> {
+  try {
+    const events = await getEvents();
+    return NextResponse.json({
+      data: events,
+      success: true,
+    });
+  } catch (error) {
+    return NextResponse.json({
+      data: [],
+      success: false,
+      message: "Failed to fetch events",
+    });
+  }
+}
+```
+
+## Error Handling
+
+### Validation Error Handling
+
+```typescript
+// ✅ Correct - Comprehensive error handling
+export function handleValidationError(error: z.ZodError) {
+  const fieldErrors: Record<string, string> = {};
+
+  error.errors.forEach((err) => {
+    const field = err.path.join(".");
+    fieldErrors[field] = err.message;
+  });
+
+  return {
+    hasErrors: true,
+    fieldErrors,
+    generalError: "Please fix the errors below",
+  };
+}
+
+// ✅ Correct - User-friendly error messages
+export const validationMessages = {
+  required: (field: string) => `${field} is required`,
+  minLength: (field: string, min: number) =>
+    `${field} must be at least ${min} characters`,
+  maxLength: (field: string, max: number) =>
+    `${field} must be less than ${max} characters`,
+  email: "Please enter a valid email address",
+  url: "Please enter a valid URL",
+  date: "Please enter a valid date",
+};
+```
+
+## Data Transformation
+
+### Schema Transformations
+
+```typescript
+// ✅ Correct - Data transformation with Zod
+export const EventFormSchema = z.object({
+  title: z.string().min(2).max(100),
+  description: z.string().min(10).max(500),
+  date: z.string().transform((str) => new Date(str)),
+  maxParticipants: z.string().transform((str) => parseInt(str, 10)),
+  category: z.string().transform((str) => str as EventCategory),
+});
+
+// ✅ Correct - Preprocessing
+export const EventUpdateSchema = z
+  .object({
+    title: z.string().min(2).max(100).optional(),
+    description: z.string().min(10).max(500).optional(),
+    date: z
+      .string()
+      .transform((str) => new Date(str))
+      .optional(),
+  })
+  .transform((data) => {
+    // Remove undefined values
+    return Object.fromEntries(
+      Object.entries(data).filter(([_, value]) => value !== undefined)
+    );
+  });
+```
+
+## Best Practices
+
+### Do's
+
+- Always validate data at API boundaries
+- Use Zod schemas for both client and server validation
+- Implement proper error handling and user feedback
+- Create specific schemas for different use cases
+- Use type guards for runtime type checking
+- Transform data appropriately with Zod
+
+### Don'ts
+
+- Don't use FormData type directly
+- Don't skip validation on the server side
+- Don't expose raw validation errors to users
+- Don't create overly complex schemas
+- Don't forget to handle validation errors gracefully

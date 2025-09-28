@@ -1,8 +1,17 @@
 import { createClient } from "next-sanity";
 import { clientConfig } from "./sanity.config";
 
-// Create Sanity client
+// Create Sanity client for read operations
 export const client = createClient(clientConfig);
+
+// Create Sanity client for write operations (optional - requires SANITY_API_TOKEN)
+export const writeClient = process.env.SANITY_API_TOKEN
+  ? createClient({
+      ...clientConfig,
+      token: process.env.SANITY_API_TOKEN,
+      useCdn: false, // Always use live data for write operations
+    })
+  : null;
 
 // Types for internationalized content
 export interface NavigationContent {
