@@ -114,7 +114,7 @@ export default function AuthButtons({
               Profile
             </Link>
           </DropdownMenuItem>
-          {auth.customClaims?.admin && (
+          {auth.customClaims?.admin === true && (
             <DropdownMenuItem asChild>
               <Link
                 href={`/${currentLang}/admin`}

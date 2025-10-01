@@ -7,38 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  PlusCircleIcon,
-  CalendarIcon,
-  EditIcon,
-  TrashIcon,
-} from "lucide-react";
+import { PlusCircleIcon, CalendarIcon, EditIcon } from "lucide-react";
+import { getAllEvents } from "@/lib/events";
+import DeleteEventButton from "@/components/delete-event-button";
 
-// Mock data - replace with actual data fetching
-const events = [
-  {
-    id: "1",
-    title: "Yacht Charter Experience",
-    description: "Explore the Adriatic coast on a luxury yacht",
-    startDate: "2024-02-15",
-    endDate: "2024-02-17",
-    status: "published",
-    participants: 8,
-    maxParticipants: 12,
-  },
-  {
-    id: "2",
-    title: "Wine Tasting Tour",
-    description: "Discover local Croatian wines",
-    startDate: "2024-02-20",
-    endDate: "2024-02-20",
-    status: "draft",
-    participants: 0,
-    maxParticipants: 20,
-  },
-];
-
-export default function EventsPage() {
+export default async function EventsPage() {
+  const events = await getAllEvents();
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -82,26 +56,26 @@ export default function EventsPage() {
               <div className="space-y-2">
                 <div className="flex items-center text-sm text-muted-foreground">
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {event.startDate} - {event.endDate}
+                  {event.startDate.toLocaleDateString()} -{" "}
+                  {event.endDate.toLocaleDateString()}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {event.participants}/{event.maxParticipants} participants
+                  Max participants: {event.maxParticipants}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Price: €{event.price}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Location: {event.location}
                 </div>
                 <div className="flex space-x-2 pt-2">
-                  <Link href={`/admin/event/edit/${event.id}`}>
+                  <Link href={`/admin/event/edit/${event.slug}`}>
                     <Button variant="outline" size="sm">
                       <EditIcon className="mr-1 h-3 w-3" />
                       Edit
                     </Button>
                   </Link>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-destructive hover:text-destructive/80"
-                  >
-                    <TrashIcon className="mr-1 h-3 w-3" />
-                    Delete
-                  </Button>
+                  <DeleteEventButton eventId={event.id} />
                 </div>
               </div>
             </CardContent>

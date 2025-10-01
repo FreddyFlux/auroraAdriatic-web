@@ -5,11 +5,29 @@ export default defineType({
   title: 'Event',
   type: 'document',
   fields: [
+    // Temporary compatibility field to avoid Studio warning for legacy documents
+    // Prefer using documentInternationalization (_lang) for language handling
+    defineField({
+      name: 'language',
+      title: 'Language',
+      type: 'string',
+      readOnly: true,
+      hidden: true,
+      description: 'Deprecated: use document translations (_lang). Present for legacy docs only.',
+    }),
     defineField({
       name: 'eventId',
       title: 'Event ID',
       type: 'string',
       description: 'Reference to Firebase event ID (read-only)',
+      readOnly: true,
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'location',
+      title: 'Location',
+      type: 'string',
+      description: 'Event location (read-only from Firebase)',
       readOnly: true,
       validation: (Rule) => Rule.required(),
     }),
@@ -22,11 +40,38 @@ export default defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
-      name: 'location',
-      title: 'Location',
+      name: 'titleTranslation',
+      title: 'Title Translation',
       type: 'string',
-      description: 'Event location (read-only from Firebase)',
-      readOnly: true,
+      description: 'Translated title for this language (editable by admins)',
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'catchphrase',
+      title: 'Catchphrase',
+      type: 'string',
+      description: 'Short, catchy phrase for the event',
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'shortDescription',
+      title: 'Short Description',
+      type: 'string',
+      description: 'Brief description of the event',
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'featured',
+      title: 'Featured',
+      type: 'string',
+      options: {
+        list: [
+          {title: 'Yes', value: 'yes'},
+          {title: 'No', value: 'no'},
+        ],
+        layout: 'radio',
+      },
+      description: 'Whether this event should be featured prominently',
       validation: (Rule) => Rule.required(),
     }),
     defineField({
@@ -120,7 +165,7 @@ export default defineType({
               name: 'icon',
               type: 'string',
               title: 'Icon Name',
-              description: 'Lucide icon name (e.g., "anchor", "wine", "mountain")',
+              description: 'Lucide icon name look for icons here https://lucide.dev/icons/',
             },
           ],
         },

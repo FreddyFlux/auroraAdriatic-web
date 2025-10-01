@@ -29,11 +29,6 @@ export const registerUser = async (data: {
 
     const user = userCredential.user;
 
-    // Update user profile with display name
-    await user.updateProfile({
-      displayName: data.name,
-    });
-
     // Create user document in Firestore
     await firestore.collection("users").doc(user.uid).set({
       uid: user.uid,

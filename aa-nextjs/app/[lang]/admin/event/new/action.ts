@@ -3,10 +3,35 @@
 import { auth, firestore } from "@/firebase/server";
 import { eventDataSchema } from "@/validation/eventSchema";
 import { writeClient } from "@/lib/sanity";
+import slugify from "slugify";
+
+// Helper function to generate slug
+const generateSlug = (title: string): string => {
+  return slugify(title, {
+    lower: true,
+    strict: true,
+    remove: /[*+~.()'"!:@]/g,
+  });
+};
+
+// Helper function to check if slug is unique
+const isSlugUnique = async (slug: string): Promise<boolean> => {
+  try {
+    const snapshot = await firestore
+      .collection("events")
+      .where("slug", "==", slug)
+      .get();
+    return snapshot.empty;
+  } catch (error) {
+    console.error("Error checking slug uniqueness:", error);
+    return false;
+  }
+};
 
 export const createEvent = async (
   data: {
     title: string;
+    slug: string;
     description: string;
     location: string;
     startDate: Date;
@@ -38,10 +63,24 @@ export const createEvent = async (
     };
   }
 
+  // Generate slug from title if not provided
+  const slug = data.slug || generateSlug(data.title);
+
+  // Check if slug is unique
+  const isUnique = await isSlugUnique(slug);
+  if (!isUnique) {
+    return {
+      error: true,
+      message:
+        "An event with this title already exists. Please choose a different title.",
+    };
+  }
+
   try {
-    // Prepare event data
+    // Prepare event data with the validated slug
     const eventData = {
       ...data,
+      slug,
       created: new Date(),
       updated: new Date(),
     };

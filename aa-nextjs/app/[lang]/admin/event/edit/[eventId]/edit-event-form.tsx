@@ -24,11 +24,22 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { SaveIcon } from "lucide-react";
-import { updateEvent } from "./action";
+import { updateEvent, getEventById } from "./action";
 import { useEffect } from "react";
+
+// Simple client-side slug generation for preview (server will validate)
+const generateSlug = (title: string): string => {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .trim();
+};
 
 type EventFormData = {
   title: string;
+  slug: string;
   description: string;
   location: string;
   startDate: Date;
@@ -60,6 +71,7 @@ export default function EditEventForm({ eventId }: EditEventFormProps) {
     resolver: zodResolver(eventSchema),
     defaultValues: {
       title: "",
+      slug: "",
       description: "",
       location: "",
       startDate: new Date(),
@@ -76,12 +88,22 @@ export default function EditEventForm({ eventId }: EditEventFormProps) {
     },
   });
 
+  // Auto-generate slug when title changes
+  useEffect(() => {
+    const title = form.watch("title");
+    if (title) {
+      const generatedSlug = generateSlug(title);
+      form.setValue("slug", generatedSlug);
+    }
+  }, [form.watch("title")]);
+
   // Load event data (mock implementation - replace with actual data fetching)
   useEffect(() => {
     // This would typically fetch the event data from Firebase
     // For now, we'll use mock data
     const mockEventData = {
       title: "Sample Event",
+      slug: "sample-event",
       description: "This is a sample event description",
       location: "Split, Croatia",
       startDate: new Date("2024-02-15"),
@@ -152,6 +174,23 @@ export default function EditEventForm({ eventId }: EditEventFormProps) {
                 {form.formState.errors.title && (
                   <p className="text-sm text-destructive">
                     {form.formState.errors.title.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="slug">URL Slug</Label>
+                <Input
+                  id="slug"
+                  placeholder="url-slug"
+                  {...form.register("slug")}
+                />
+                <p className="text-xs text-muted-foreground">
+                  This will be used in the URL. Auto-generated from title.
+                </p>
+                {form.formState.errors.slug && (
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.slug.message}
                   </p>
                 )}
               </div>

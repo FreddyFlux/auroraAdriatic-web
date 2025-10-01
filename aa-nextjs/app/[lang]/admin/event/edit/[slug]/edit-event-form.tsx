@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { eventSchema } from "@/validation/eventSchema";
 import { useAuth } from "@/context/auth";
-import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,8 +23,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { PlusCircleIcon } from "lucide-react";
-import { createEvent } from "./action";
+import { SaveIcon } from "lucide-react";
+import { updateEvent, getEventById } from "./action";
+import { useEffect } from "react";
 
 // Simple client-side slug generation for preview (server will validate)
 const generateSlug = (title: string): string => {
@@ -59,7 +59,13 @@ type EventFormData = {
   }>;
 };
 
-export default function NewEventForm() {
+interface EditEventFormProps {
+  eventId: string;
+  slug: string;
+}
+
+export default function EditEventForm({ eventId, slug }: EditEventFormProps) {
+  // slug is used in the redirect after successful update
   const router = useRouter();
   const auth = useAuth();
 
@@ -93,18 +99,53 @@ export default function NewEventForm() {
     }
   }, [watchedTitle, form]);
 
+  // Load event data
+  useEffect(() => {
+    const loadEventData = async () => {
+      try {
+        const event = await getEventById(eventId);
+        if (event) {
+          form.reset({
+            title: event.title,
+            slug: event.slug,
+            description: event.description,
+            location: event.location,
+            startDate: event.startDate,
+            endDate: event.endDate,
+            maxParticipants: event.maxParticipants,
+            price: event.price,
+            category: event.category,
+            status: event.status,
+            isPublic: event.isPublic,
+            requirements: event.requirements || "",
+            contactEmail: event.contactEmail || "",
+            contactPhone: event.contactPhone || "",
+            images: [],
+          });
+        }
+      } catch (error) {
+        console.error("Error loading event data:", error);
+        toast.error("Error!", {
+          description: "Failed to load event data",
+        });
+      }
+    };
+
+    loadEventData();
+  }, [eventId, form]);
+
   const handleSubmit = async (data: EventFormData) => {
     const token = await auth?.currentUser?.getIdToken();
 
     if (!token) {
       toast.error("Error!", {
-        description: "You must be logged in to create events",
+        description: "You must be logged in to update events",
       });
       return;
     }
 
     try {
-      const response = await createEvent(data, token);
+      const response = await updateEvent(eventId, data, token);
 
       if (response?.error) {
         toast.error("Error!", {
@@ -114,13 +155,14 @@ export default function NewEventForm() {
       }
 
       toast.success("Success!", {
-        description: "Event created successfully",
+        description: "Event updated successfully",
       });
 
-      router.push("/admin/event");
+      // Redirect to the updated event's edit page with new slug
+      router.push(`/admin/event/edit/${data.slug || generateSlug(data.title)}`);
     } catch {
       toast.error("Error!", {
-        description: "Failed to create event",
+        description: "Failed to update event",
       });
     }
   };
@@ -128,10 +170,8 @@ export default function NewEventForm() {
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle>Event Details</CardTitle>
-        <CardDescription>
-          Fill in the information for your new event
-        </CardDescription>
+        <CardTitle>Edit Event</CardTitle>
+        <CardDescription>Update the information for your event</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -379,17 +419,32 @@ export default function NewEventForm() {
             <Label htmlFor="isPublic">Make this event public</Label>
           </div>
 
+          <div className="text-sm text-muted-foreground p-3 border rounded-md bg-muted/20">
+            <p className="font-medium">Event Content</p>
+            <p>
+              Add detailed content and media in Sanity CMS at{" "}
+              <a
+                href="http://localhost:3333/structure/event"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                http://localhost:3333/structure/event
+              </a>
+            </p>
+          </div>
+
           <Button
             type="submit"
             className="w-full"
             disabled={form.formState.isSubmitting}
           >
             {form.formState.isSubmitting ? (
-              "Creating Event..."
+              "Updating Event..."
             ) : (
               <>
-                <PlusCircleIcon className="mr-2 h-4 w-4" />
-                Create Event
+                <SaveIcon className="mr-2 h-4 w-4" />
+                Update Event
               </>
             )}
           </Button>

@@ -78,7 +78,8 @@ export async function middleware(request: NextRequest) {
     !token &&
     (pathForAuth.startsWith("/login") ||
       pathForAuth.startsWith("/register") ||
-      pathForAuth.startsWith("/forgot-password"))
+      pathForAuth.startsWith("/forgot-password") ||
+      pathForAuth.startsWith("/refresh"))
   ) {
     return NextResponse.next();
   }
@@ -102,7 +103,7 @@ export async function middleware(request: NextRequest) {
     if (decodedToken.exp && (decodedToken.exp - 300) * 1000 < Date.now()) {
       return NextResponse.redirect(
         new URL(
-          `/api/refresh-token?redirect=${encodeURIComponent(pathname)}`,
+          `/${language}/refresh?redirect=${encodeURIComponent(pathname)}`,
           request.url
         )
       );
@@ -128,11 +129,13 @@ export const config = {
     "/:lang/login",
     "/:lang/register",
     "/:lang/forgot-password",
+    "/:lang/refresh",
     // Handle routes that might not have language prefix (for redirection)
     "/admin",
     "/admin/:path*",
     "/login",
     "/register",
     "/forgot-password",
+    "/refresh",
   ],
 };

@@ -9,31 +9,107 @@ globs: *.ts,*.tsx
 - Use Sanity for content management and translations
 - Store all user-facing text in Sanity with locale support
 - Implement proper locale detection based on user system settings
+- **CRITICAL: Use document-level translation, NOT field-level translation**
 
-## Translation Structure
+## Document-Level Translation Strategy
+
+### Sanity Translation Setup
+
+- **NEVER** create field-level translation objects (e.g., `titleTranslation: { en: "...", no: "..." }`)
+- **ALWAYS** use Sanity's document-level internationalization
+- Create separate document instances for each locale
+- Use `_i18n` field to link translated documents
+- Use `_lang` field to specify the document language
+
+### Translation Document Structure
 
 ```typescript
-// ✅ Correct - Using Sanity for translations
+// ✅ Correct - Document-level translation
+// Each language gets its own document instance
+interface EventDocument {
+  _id: string;
+  _type: "event";
+  _lang: "en" | "no" | "hr";
+  _i18n: {
+    base: string; // Reference to base document
+    translations: string[]; // Array of translation document IDs
+  };
+  eventId: string; // Firebase reference (same across all languages)
+  title: string; // Translated title for this language
+  description: any[]; // Translated description
+  // ... other fields translated per language
+}
+
+// ❌ Wrong - Field-level translation
+interface EventDocumentWrong {
+  title: string; // Original
+  titleTranslation: {
+    en: string;
+    no: string;
+    hr: string;
+  }; // DON'T DO THIS
+}
+```
+
+### Querying Translated Content
+
+```typescript
+// ✅ Correct - Querying translated documents
 import { client } from "@/lib/sanity";
 
-interface Translation {
-  _id: string;
-  key: string;
-  locale: string;
-  value: string;
-}
-
-async function getTranslations(locale: string) {
+async function getEventBySlug(slug: string, locale: string) {
   return await client.fetch(
     `
-    *[_type == "translation" && locale == $locale] {
-      key,
-      value
+    *[_type == "event" && slug.current == $slug && _lang == $locale][0] {
+      _id,
+      _lang,
+      eventId,
+      title,
+      description,
+      location,
+      // ... other fields
     }
   `,
-    { locale }
+    { slug, locale }
   );
 }
+
+// ✅ Correct - Getting all translations of an event
+async function getEventTranslations(baseEventId: string) {
+  return await client.fetch(
+    `
+    *[_type == "event" && _i18n.base == $baseEventId] {
+      _id,
+      _lang,
+      title,
+      slug
+    }
+  `,
+    { baseEventId }
+  );
+}
+```
+
+### Sanity Studio Configuration
+
+```typescript
+// ✅ Correct - Sanity config with i18n
+import { defineConfig } from "sanity";
+import { documentInternationalization } from "@sanity/document-internationalization";
+
+export default defineConfig({
+  // ... other config
+  plugins: [
+    documentInternationalization({
+      supportedLanguages: [
+        { id: "en", title: "English" },
+        { id: "no", title: "Norwegian" },
+        { id: "hr", title: "Croatian" },
+      ],
+      schemaTypes: ["event", "page", "article"], // Document types to translate
+    }),
+  ],
+});
 ```
 
 ## Locale Detection
@@ -49,3 +125,21 @@ async function getTranslations(locale: string) {
 - Implement proper content versioning
 - Use structured content with proper schemas
 - Support multiple content types per locale
+- **Use document-level translation for all translatable content**
+
+## Best Practices
+
+### Do's
+
+- Create separate document instances for each language
+- Use `_lang` field to specify document language
+- Use `_i18n` field to link related translations
+- Query documents by language using `_lang` filter
+- Keep non-translatable fields (like Firebase IDs) consistent across languages
+
+### Don'ts
+
+- Don't create field-level translation objects
+- Don't store multiple languages in a single field
+- Don't mix translation strategies
+- Don't forget to handle missing translations gracefully

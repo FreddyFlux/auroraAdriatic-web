@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const eventDataSchema = z.object({
   title: z.string().min(1, { message: "Event title is required." }),
+  slug: z.string().min(1, { message: "Event slug is required." }),
   description: z
     .string()
     .min(10, "Description must contain at least 10 characters."),

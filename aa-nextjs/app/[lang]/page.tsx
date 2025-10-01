@@ -16,7 +16,7 @@ export default async function Home({ params }: HomeProps) {
         <SmallHero />
       </div>
       <div className="max-w-7xl mx-auto">
-        <MainPageTabs />
+        <MainPageTabs locale={lang} />
       </div>
     </>
   );
