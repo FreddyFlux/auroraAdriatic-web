@@ -14,6 +14,7 @@ import {
   CalendarIcon,
   UsersIcon,
   SettingsIcon,
+  BuildingIcon,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -36,14 +37,12 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Participants</CardTitle>
-            <UsersIcon className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Properties</CardTitle>
+            <BuildingIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">245</div>
-            <p className="text-xs text-muted-foreground">
-              +12% from last month
-            </p>
+            <div className="text-2xl font-bold">8</div>
+            <p className="text-xs text-muted-foreground">+1 from last month</p>
           </CardContent>
         </Card>
 
@@ -96,6 +95,40 @@ export default function AdminDashboard() {
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 Manage Events
+              </Button>
+            </Link>
+            <Link href="/admin/property/new">
+              <Button
+                className={`w-full justify-start transition-all duration-200 ${
+                  hoveredButton === "create-property"
+                    ? "bg-background text-foreground border border-input"
+                    : ""
+                }`}
+                variant={
+                  hoveredButton === "create-property" ? "outline" : "default"
+                }
+                onMouseEnter={() => setHoveredButton("create-property")}
+                onMouseLeave={() => setHoveredButton(null)}
+              >
+                <PlusCircleIcon className="mr-2 h-4 w-4" />
+                Create New Property
+              </Button>
+            </Link>
+            <Link href="/admin/property">
+              <Button
+                variant={
+                  hoveredButton === "manage-property" ? "default" : "outline"
+                }
+                className={`w-full justify-start transition-all duration-200 ${
+                  hoveredButton === "manage-property"
+                    ? "bg-background text-foreground border border-input"
+                    : ""
+                }`}
+                onMouseEnter={() => setHoveredButton("manage-property")}
+                onMouseLeave={() => setHoveredButton(null)}
+              >
+                <BuildingIcon className="mr-2 h-4 w-4" />
+                Manage Properties
               </Button>
             </Link>
           </CardContent>

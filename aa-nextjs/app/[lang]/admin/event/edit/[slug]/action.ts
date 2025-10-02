@@ -48,6 +48,7 @@ export const getEventById = async (eventId: string) => {
       location: data.location,
       startDate: data.startDate.toDate(),
       endDate: data.endDate.toDate(),
+      durationDays: data.durationDays,
       maxParticipants: data.maxParticipants,
       price: data.price,
       category: data.category,
@@ -74,6 +75,7 @@ export const updateEvent = async (
     location: string;
     startDate: Date;
     endDate: Date;
+    durationDays: number;
     maxParticipants: number;
     price: number;
     category: string;

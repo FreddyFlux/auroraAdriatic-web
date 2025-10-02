@@ -28,14 +28,18 @@ export default function NavBar({
       : "en";
 
   const homeHref = `/${validLang}`;
-  const aboutHref = `/${validLang}/about`;
-  const contactHref = `/${validLang}/contact`;
+  const eventsHref = `/${validLang}/events`;
+  const propertiesHref = `/${validLang}/properties`;
 
   // Navigation items with their paths
   const navItems = [
     { label: "Home", href: homeHref, path: `/${validLang}` },
-    { label: "About", href: aboutHref, path: `/${validLang}/about` },
-    { label: "Contact", href: contactHref, path: `/${validLang}/contact` },
+    { label: "Events", href: eventsHref, path: `/${validLang}/events` },
+    {
+      label: "Properties",
+      href: propertiesHref,
+      path: `/${validLang}/properties`,
+    },
   ];
 
   // Auth routes for active state detection
@@ -74,8 +78,8 @@ export default function NavBar({
         currentPathToCheck === `/${validLang}` ||
         currentPathToCheck === `/${validLang}/` ||
         (currentPathToCheck.startsWith(`/${validLang}/`) &&
-          !currentPathToCheck.startsWith(`/${validLang}/about`) &&
-          !currentPathToCheck.startsWith(`/${validLang}/contact`) &&
+          !currentPathToCheck.startsWith(`/${validLang}/events`) &&
+          !currentPathToCheck.startsWith(`/${validLang}/properties`) &&
           !currentPathToCheck.startsWith(`/${validLang}/login`) &&
           !currentPathToCheck.startsWith(`/${validLang}/register`) &&
           !currentPathToCheck.startsWith(`/${validLang}/account`) &&

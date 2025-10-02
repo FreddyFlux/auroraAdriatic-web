@@ -1,7 +1,7 @@
 "use server";
 
 import { auth, firestore } from "@/firebase/server";
-import { eventDataSchema } from "@/validation/eventSchema";
+import { propertyDataSchema } from "@/validation/propertySchema";
 import { writeClient } from "@/lib/sanity";
 import slugify from "slugify";
 
@@ -18,7 +18,7 @@ const generateSlug = (title: string): string => {
 const isSlugUnique = async (slug: string): Promise<boolean> => {
   try {
     const snapshot = await firestore
-      .collection("events")
+      .collection("properties")
       .where("slug", "==", slug)
       .get();
     return snapshot.empty;
@@ -28,23 +28,28 @@ const isSlugUnique = async (slug: string): Promise<boolean> => {
   }
 };
 
-export const createEvent = async (
+export const createProperty = async (
   data: {
     title: string;
     slug: string;
     description: string;
     location: string;
-    startDate: Date;
-    endDate: Date;
-    durationDays: number;
-    maxParticipants: number;
-    price: number;
-    category: string;
+    propertyType: string;
+    bedrooms: number;
+    bathrooms: number;
+    guests: number;
+    pricePerNight: number;
+    area: number;
     status: string;
     isPublic: boolean;
-    requirements?: string;
+    checkInTime?: string;
+    checkOutTime?: string;
+    minimumStay?: number;
+    maximumStay?: number;
     contactEmail?: string;
     contactPhone?: string;
+    amenities?: string[];
+    houseRules?: string[];
   },
   authToken: string
 ) => {
@@ -56,7 +61,7 @@ export const createEvent = async (
     };
   }
 
-  const validation = eventDataSchema.safeParse(data);
+  const validation = propertyDataSchema.safeParse(data);
   if (!validation.success) {
     return {
       error: true,
@@ -73,13 +78,13 @@ export const createEvent = async (
     return {
       error: true,
       message:
-        "An event with this title already exists. Please choose a different title.",
+        "A property with this title already exists. Please choose a different title.",
     };
   }
 
   try {
-    // Prepare event data with the validated slug
-    const eventData = {
+    // Prepare property data with the validated slug
+    const propertyData = {
       ...data,
       slug,
       created: new Date(),
@@ -87,44 +92,46 @@ export const createEvent = async (
     };
 
     // Filter out undefined values to prevent Firestore errors
-    const filteredEventData = Object.fromEntries(
-      Object.entries(eventData).filter(([, value]) => value !== undefined)
+    const filteredPropertyData = Object.fromEntries(
+      Object.entries(propertyData).filter(([, value]) => value !== undefined)
     );
 
-    // Create event in Firebase
-    const event = await firestore.collection("events").add(filteredEventData);
+    // Create property in Firebase
+    const property = await firestore
+      .collection("properties")
+      .add(filteredPropertyData);
 
-    // Create event in Sanity with minimal schema (only if writeClient is available)
+    // Create property in Sanity with minimal schema (only if writeClient is available)
     let sanityDocumentId = null;
     if (writeClient) {
       try {
-        const sanityEvent = await writeClient.create({
-          _type: "event",
-          eventId: event.id, // Read-only: Use the same ID as Firebase
+        const sanityProperty = await writeClient.create({
+          _type: "property",
+          propertyId: property.id, // Read-only: Use the same ID as Firebase
           title: data.title, // Read-only: From Firebase data
           location: data.location, // Read-only: From Firebase data
           // Note: description and other content fields are optional and not auto-generated to allow manual editing
         });
-        sanityDocumentId = sanityEvent._id;
+        sanityDocumentId = sanityProperty._id;
       } catch (sanityError) {
         console.warn("Failed to create Sanity document:", sanityError);
         // Continue without failing the entire operation
       }
     } else {
       console.warn(
-        "SANITY_API_TOKEN not configured. Event created in Firebase only. Add SANITY_API_TOKEN to enable Sanity integration."
+        "SANITY_API_TOKEN not configured. Property created in Firebase only. Add SANITY_API_TOKEN to enable Sanity integration."
       );
     }
 
     return {
-      eventId: event.id,
+      propertyId: property.id,
       sanityDocumentId,
     };
   } catch (error) {
-    console.error("Error creating event:", error);
+    console.error("Error creating property:", error);
     return {
       error: true,
-      message: "Failed to create event. Please try again.",
+      message: "Failed to create property. Please try again.",
     };
   }
 };

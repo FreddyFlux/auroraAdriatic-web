@@ -10,6 +10,8 @@ export interface Event {
   location: string;
   startDate: Date;
   endDate: Date;
+  durationDays: number;
+  minParticipants: number;
   maxParticipants: number;
   price: number;
   category: string;
@@ -42,6 +44,21 @@ export interface SanityEvent {
   };
 }
 
+export interface EventFilters {
+  search?: string;
+  category?: string;
+  location?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  minParticipants?: number;
+  maxParticipants?: number;
+  startDate?: string;
+  endDate?: string;
+  minDuration?: number;
+  maxDuration?: number;
+  status?: string;
+}
+
 export const getEvents = async (): Promise<Event[]> => {
   try {
     const snapshot = await firestore
@@ -60,6 +77,106 @@ export const getEvents = async (): Promise<Event[]> => {
     })) as Event[];
   } catch (error) {
     console.error("Error fetching events:", error);
+    return [];
+  }
+};
+
+export const getFilteredEvents = async (
+  filters: EventFilters
+): Promise<Event[]> => {
+  try {
+    // Start with base query - fetch all public events
+    // We'll do filtering on the client side to avoid Firestore composite index requirements
+    const snapshot = await firestore
+      .collection("events")
+      .where("isPublic", "==", true)
+      .orderBy("created", "desc")
+      .get();
+
+    let events = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+      created: doc.data().created.toDate(),
+      updated: doc.data().updated.toDate(),
+      startDate: doc.data().startDate.toDate(),
+      endDate: doc.data().endDate.toDate(),
+    })) as Event[];
+
+    // Apply category filter
+    if (filters.category && filters.category !== "all") {
+      events = events.filter((event) => event.category === filters.category);
+    }
+
+    // Apply status filter
+    if (filters.status && filters.status !== "all") {
+      events = events.filter((event) => event.status === filters.status);
+    }
+
+    // Apply location filter
+    if (filters.location) {
+      const locationLower = filters.location.toLowerCase();
+      events = events.filter((event) =>
+        event.location.toLowerCase().includes(locationLower)
+      );
+    }
+
+    // Apply price filters
+    if (filters.minPrice !== undefined && filters.minPrice > 0) {
+      events = events.filter((event) => event.price >= filters.minPrice!);
+    }
+    if (filters.maxPrice !== undefined && filters.maxPrice > 0) {
+      events = events.filter((event) => event.price <= filters.maxPrice!);
+    }
+
+    // Apply participants filters
+    if (filters.minParticipants !== undefined && filters.minParticipants > 0) {
+      events = events.filter(
+        (event) => event.maxParticipants >= filters.minParticipants!
+      );
+    }
+    if (filters.maxParticipants !== undefined && filters.maxParticipants > 0) {
+      events = events.filter(
+        (event) => event.maxParticipants <= filters.maxParticipants!
+      );
+    }
+
+    // Apply date range filters
+    if (filters.startDate) {
+      const startDate = new Date(filters.startDate);
+      events = events.filter((event) => event.startDate >= startDate);
+    }
+    if (filters.endDate) {
+      const endDate = new Date(filters.endDate);
+      endDate.setHours(23, 59, 59, 999); // Include the entire end date
+      events = events.filter((event) => event.startDate <= endDate);
+    }
+
+    // Apply duration filters
+    if (filters.minDuration !== undefined && filters.minDuration > 0) {
+      events = events.filter(
+        (event) => event.durationDays >= filters.minDuration!
+      );
+    }
+    if (filters.maxDuration !== undefined && filters.maxDuration > 0) {
+      events = events.filter(
+        (event) => event.durationDays <= filters.maxDuration!
+      );
+    }
+
+    // Apply client-side search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      events = events.filter(
+        (event) =>
+          event.title.toLowerCase().includes(searchLower) ||
+          event.description.toLowerCase().includes(searchLower) ||
+          event.location.toLowerCase().includes(searchLower)
+      );
+    }
+
+    return events;
+  } catch (error) {
+    console.error("Error fetching filtered events:", error);
     return [];
   }
 };

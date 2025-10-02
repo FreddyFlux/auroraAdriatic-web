@@ -37,7 +37,7 @@ export default defineConfig({
         {id: 'no', title: 'Norwegian'},
         {id: 'hr', title: 'Croatian'},
       ],
-      schemaTypes: ['navigation', 'event'],
+      schemaTypes: ['navigation', 'event', 'property'],
     }),
     languageFilter({
       supportedLanguages: [
@@ -46,7 +46,7 @@ export default defineConfig({
         {id: 'hr', title: 'Croatian'},
       ],
       defaultLanguages: ['en'],
-      documentTypes: ['navigation', 'event'],
+      documentTypes: ['navigation', 'event', 'property'],
     }),
   ],
 

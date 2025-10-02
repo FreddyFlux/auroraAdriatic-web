@@ -1,8 +1,8 @@
 import {defineField, defineType} from 'sanity'
 
 export default defineType({
-  name: 'event',
-  title: 'Event',
+  name: 'property',
+  title: 'Property',
   type: 'document',
   fields: [
     // Temporary compatibility field to avoid Studio warning for legacy documents
@@ -16,26 +16,18 @@ export default defineType({
       description: 'Deprecated: use document translations (_lang). Present for legacy docs only.',
     }),
     defineField({
-      name: 'eventId',
-      title: 'Event ID',
+      name: 'propertyId',
+      title: 'Property ID',
       type: 'string',
-      description: 'Reference to Firebase event ID (read-only)',
-      readOnly: true,
-      validation: (Rule) => Rule.required(),
-    }),
-    defineField({
-      name: 'location',
-      title: 'Location',
-      type: 'string',
-      description: 'Event location (read-only from Firebase)',
+      description: 'Reference to Firebase property ID (read-only)',
       readOnly: true,
       validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'title',
-      title: 'Event Title',
+      title: 'Property Title',
       type: 'string',
-      description: 'Event title (read-only from Firebase)',
+      description: 'Property title (read-only from Firebase)',
       readOnly: true,
       validation: (Rule) => Rule.required(),
     }),
@@ -47,17 +39,25 @@ export default defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: 'location',
+      title: 'Location',
+      type: 'string',
+      description: 'Property location (read-only from Firebase)',
+      readOnly: true,
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
       name: 'catchphrase',
       title: 'Catchphrase',
       type: 'string',
-      description: 'Short, catchy phrase for the event',
+      description: 'Short, catchy phrase for the property',
       validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'shortDescription',
       title: 'Short Description',
       type: 'string',
-      description: 'Brief description of the event (max 95 characters)',
+      description: 'Brief description of the property (max 95 characters)',
       validation: (Rule) => Rule.required().max(95),
     }),
     defineField({
@@ -69,9 +69,8 @@ export default defineType({
           {title: 'Yes', value: 'yes'},
           {title: 'No', value: 'no'},
         ],
-        layout: 'radio',
       },
-      description: 'Whether this event should be featured prominently',
+      initialValue: 'no',
       validation: (Rule) => Rule.required(),
     }),
     defineField({
@@ -83,9 +82,9 @@ export default defineType({
           type: 'block',
           styles: [
             {title: 'Normal', value: 'normal'},
-            {title: 'H1', value: 'h1'},
             {title: 'H2', value: 'h2'},
             {title: 'H3', value: 'h3'},
+            {title: 'H4', value: 'h4'},
             {title: 'Quote', value: 'blockquote'},
           ],
           lists: [
@@ -114,7 +113,7 @@ export default defineType({
           },
         },
       ],
-      description: 'Rich text description of the event',
+      description: 'Detailed property description',
     }),
     defineField({
       name: 'images',
@@ -141,11 +140,11 @@ export default defineType({
           ],
         },
       ],
-      description: 'Event images and photos',
+      description: 'Property images',
     }),
     defineField({
       name: 'highlights',
-      title: 'Key Highlights',
+      title: 'Property Highlights',
       type: 'array',
       of: [
         {
@@ -155,72 +154,64 @@ export default defineType({
               name: 'title',
               type: 'string',
               title: 'Highlight Title',
+              validation: (Rule) => Rule.required(),
             },
             {
               name: 'description',
               type: 'text',
               title: 'Description',
+              validation: (Rule) => Rule.required(),
             },
             {
               name: 'icon',
               type: 'string',
               title: 'Icon Name',
-              description: 'Lucide icon name look for icons here https://lucide.dev/icons/',
+              description: 'Icon name from Lucide React (e.g., "wifi", "car", "bed")',
             },
           ],
         },
       ],
-      description: 'Key highlights and features of the event',
+      description: 'Key features and highlights of the property',
     }),
     defineField({
-      name: 'itinerary',
-      title: 'Itinerary',
+      name: 'amenities',
+      title: 'Amenities',
       type: 'array',
       of: [
         {
           type: 'object',
           fields: [
             {
-              name: 'day',
-              type: 'number',
-              title: 'Day',
-              validation: (Rule) => Rule.min(1),
-            },
-            {
-              name: 'title',
+              name: 'category',
               type: 'string',
-              title: 'Day Title',
+              title: 'Category',
+              options: {
+                list: [
+                  {title: 'General', value: 'general'},
+                  {title: 'Kitchen', value: 'kitchen'},
+                  {title: 'Bathroom', value: 'bathroom'},
+                  {title: 'Bedroom', value: 'bedroom'},
+                  {title: 'Outdoor', value: 'outdoor'},
+                  {title: 'Entertainment', value: 'entertainment'},
+                  {title: 'Safety', value: 'safety'},
+                ],
+              },
             },
             {
-              name: 'activities',
-              type: 'array',
-              of: [
-                {
-                  type: 'object',
-                  fields: [
-                    {
-                      name: 'time',
-                      type: 'string',
-                      title: 'Time',
-                    },
-                    {
-                      name: 'activity',
-                      type: 'string',
-                      title: 'Activity',
-                    },
-                    {
-                      name: 'description',
-                      type: 'text',
-                      title: 'Description',
-                    },
-                  ],
-                },
-              ],
+              name: 'name',
+              type: 'string',
+              title: 'Amenity Name',
+              validation: (Rule) => Rule.required(),
+            },
+            {
+              name: 'description',
+              type: 'text',
+              title: 'Description',
             },
           ],
         },
       ],
-      description: 'Detailed itinerary for multi-day events',
+      description: 'Property amenities and features',
     }),
     defineField({
       name: 'included',
@@ -231,7 +222,7 @@ export default defineType({
           type: 'string',
         },
       ],
-      description: "List of what's included in the event",
+      description: 'Items and services included with the property',
     }),
     defineField({
       name: 'notIncluded',
@@ -242,11 +233,11 @@ export default defineType({
           type: 'string',
         },
       ],
-      description: "List of what's not included in the event",
+      description: 'Items and services not included with the property',
     }),
     defineField({
-      name: 'requirements',
-      title: 'Requirements',
+      name: 'houseRules',
+      title: 'House Rules',
       type: 'array',
       of: [
         {
@@ -255,27 +246,30 @@ export default defineType({
             {
               name: 'title',
               type: 'string',
-              title: 'Requirement Title',
+              title: 'Rule Title',
+              validation: (Rule) => Rule.required(),
             },
             {
               name: 'description',
               type: 'text',
               title: 'Description',
+              validation: (Rule) => Rule.required(),
             },
             {
               name: 'mandatory',
               type: 'boolean',
               title: 'Mandatory',
+              description: 'Is this rule mandatory?',
               initialValue: true,
             },
           ],
         },
       ],
-      description: 'Requirements and prerequisites for the event',
+      description: 'Property house rules and policies',
     }),
     defineField({
       name: 'testimonials',
-      title: 'Testimonials',
+      title: 'Guest Testimonials',
       type: 'array',
       of: [
         {
@@ -284,28 +278,31 @@ export default defineType({
             {
               name: 'name',
               type: 'string',
-              title: 'Customer Name',
+              title: 'Guest Name',
+              validation: (Rule) => Rule.required(),
             },
             {
               name: 'rating',
               type: 'number',
               title: 'Rating',
-              validation: (Rule) => Rule.min(1).max(5),
+              validation: (Rule) => Rule.required().min(1).max(5),
             },
             {
               name: 'text',
               type: 'text',
               title: 'Testimonial Text',
+              validation: (Rule) => Rule.required(),
             },
             {
               name: 'date',
               type: 'date',
               title: 'Date',
+              validation: (Rule) => Rule.required(),
             },
           ],
         },
       ],
-      description: 'Customer testimonials and reviews',
+      description: 'Guest reviews and testimonials',
     }),
     defineField({
       name: 'seo',
@@ -329,8 +326,8 @@ export default defineType({
         {
           name: 'keywords',
           type: 'array',
-          of: [{type: 'string'}],
           title: 'Keywords',
+          of: [{type: 'string'}],
           description: 'Keywords for SEO',
         },
       ],
@@ -339,14 +336,14 @@ export default defineType({
   ],
   preview: {
     select: {
-      title: 'title',
+      title: 'titleTranslation',
       subtitle: 'location',
       media: 'images.0',
     },
     prepare(selection) {
       const {title, subtitle, media} = selection
       return {
-        title: title || 'Event',
+        title: title || 'Untitled Property',
         subtitle: subtitle || 'No location',
         media: media,
       }

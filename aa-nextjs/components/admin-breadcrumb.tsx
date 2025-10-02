@@ -10,7 +10,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Home, Calendar, Plus, Edit } from "lucide-react";
+import { Home, Calendar, Plus, Edit, Building } from "lucide-react";
 
 interface BreadcrumbItem {
   label: string;
@@ -54,6 +54,29 @@ export default function AdminBreadcrumb() {
         const eventId = pathname.split("/admin/event/edit/")[1];
         items.push({
           label: `Edit Event`,
+          icon: <Edit className="h-4 w-4" />,
+        });
+      }
+    }
+
+    // Check if we're on property-related pages
+    if (pathname.includes("/admin/property")) {
+      items.push({
+        label: "Properties",
+        href: `${adminPath}/property`,
+        icon: <Building className="h-4 w-4" />,
+      });
+
+      // Check for specific property actions
+      if (pathname.includes("/admin/property/new")) {
+        items.push({
+          label: "New Property",
+          icon: <Plus className="h-4 w-4" />,
+        });
+      } else if (pathname.includes("/admin/property/edit/")) {
+        const propertyId = pathname.split("/admin/property/edit/")[1];
+        items.push({
+          label: `Edit Property`,
           icon: <Edit className="h-4 w-4" />,
         });
       }

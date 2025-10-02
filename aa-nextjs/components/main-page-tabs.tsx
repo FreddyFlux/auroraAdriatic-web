@@ -1,10 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainCard from "./main-card";
-import {
-  getFeaturedEvents,
-  getSanityImageUrl,
-  SanityEvent,
-} from "@/lib/sanity";
+import { getFeaturedEvents, getSanityImageUrl } from "@/lib/sanity";
+import { getEventById } from "@/lib/events";
 
 interface MainPageTabsProps {
   locale: string;
@@ -13,6 +10,18 @@ interface MainPageTabsProps {
 export default async function MainPageTabs({ locale }: MainPageTabsProps) {
   // Fetch featured events from Sanity
   const featuredEvents = await getFeaturedEvents(locale);
+
+  // Fetch Firebase event data for each featured event to get slugs
+  const eventsWithSlugs = await Promise.all(
+    featuredEvents.map(async (sanityEvent) => {
+      const firebaseEvent = await getEventById(sanityEvent.eventId);
+      return {
+        sanity: sanityEvent,
+        firebase: firebaseEvent,
+      };
+    })
+  );
+
   return (
     <Tabs defaultValue="experiences" className="">
       <TabsList>
@@ -21,17 +30,22 @@ export default async function MainPageTabs({ locale }: MainPageTabsProps) {
       </TabsList>
       <TabsContent value="experiences" className="mt-4">
         <div className="grid grid-cols-3 gap-4">
-          {featuredEvents.map((event: SanityEvent) => (
+          {eventsWithSlugs.map(({ sanity, firebase }) => (
             <MainCard
-              key={event._id}
-              title={event.titleTranslation}
-              titleDescription={event.catchphrase}
-              contentText={event.shortDescription}
+              key={sanity._id}
+              title={sanity.titleTranslation}
+              titleDescription={sanity.catchphrase}
+              contentText={sanity.shortDescription}
               buttonText="View"
-              image={event.images?.[0]}
+              image={sanity.images?.[0]}
               imageUrl={
-                event.images?.[0]
-                  ? getSanityImageUrl(event.images[0])
+                sanity.images?.[0]
+                  ? getSanityImageUrl(sanity.images[0])
+                  : undefined
+              }
+              href={
+                firebase?.slug
+                  ? `/${locale}/events/${firebase.slug}`
                   : undefined
               }
             />

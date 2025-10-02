@@ -44,6 +44,8 @@ type EventFormData = {
   location: string;
   startDate: Date;
   endDate: Date;
+  durationDays: number;
+  minParticipants: number;
   maxParticipants: number;
   price: number;
   category: string;
@@ -76,6 +78,8 @@ export default function EditEventForm({ eventId }: EditEventFormProps) {
       location: "",
       startDate: new Date(),
       endDate: new Date(),
+      durationDays: 1,
+      minParticipants: 1,
       maxParticipants: 1,
       price: 0,
       category: "yacht-charter",
@@ -108,6 +112,8 @@ export default function EditEventForm({ eventId }: EditEventFormProps) {
       location: "Split, Croatia",
       startDate: new Date("2024-02-15"),
       endDate: new Date("2024-02-17"),
+      durationDays: 3,
+      minParticipants: 4,
       maxParticipants: 12,
       price: 500,
       category: "yacht-charter",
@@ -257,6 +263,24 @@ export default function EditEventForm({ eventId }: EditEventFormProps) {
                   )}
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="durationDays">Duration (Days)</Label>
+                <Input
+                  id="durationDays"
+                  type="number"
+                  min="1"
+                  placeholder="Enter event duration in days"
+                  {...form.register("durationDays", {
+                    valueAsNumber: true,
+                  })}
+                />
+                {form.formState.errors.durationDays && (
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.durationDays.message}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -314,6 +338,23 @@ export default function EditEventForm({ eventId }: EditEventFormProps) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
+                  <Label htmlFor="minParticipants">Min Participants</Label>
+                  <Input
+                    id="minParticipants"
+                    type="number"
+                    min="1"
+                    {...form.register("minParticipants", {
+                      valueAsNumber: true,
+                    })}
+                  />
+                  {form.formState.errors.minParticipants && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.minParticipants.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="maxParticipants">Max Participants</Label>
                   <Input
                     id="maxParticipants"
@@ -329,24 +370,24 @@ export default function EditEventForm({ eventId }: EditEventFormProps) {
                     </p>
                   )}
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="price">Price (€)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    {...form.register("price", {
-                      valueAsNumber: true,
-                    })}
-                  />
-                  {form.formState.errors.price && (
-                    <p className="text-sm text-destructive">
-                      {form.formState.errors.price.message}
-                    </p>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="price">Price (€)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  {...form.register("price", {
+                    valueAsNumber: true,
+                  })}
+                />
+                {form.formState.errors.price && (
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.price.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
