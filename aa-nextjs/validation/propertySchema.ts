@@ -8,6 +8,23 @@ export const propertyDataSchema = z
       .string()
       .min(10, "Description must contain at least 10 characters."),
     location: z.string().min(3, "Location must contain at least 3 characters."),
+    coordinates: z
+      .object({
+        lat: z.number(),
+        lng: z.number(),
+      })
+      .optional(),
+    addressDetails: z
+      .object({
+        streetNumber: z.string().optional(),
+        route: z.string().optional(),
+        locality: z.string().optional(),
+        administrativeAreaLevel1: z.string().optional(),
+        country: z.string().optional(),
+        postalCode: z.string().optional(),
+        formattedAddress: z.string().optional(),
+      })
+      .optional(),
     propertyType: z.enum(
       [
         "apartment",

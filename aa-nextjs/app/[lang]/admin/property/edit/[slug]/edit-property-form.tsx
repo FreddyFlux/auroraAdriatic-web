@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,6 +22,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
+import { GoogleMapsAutocomplete } from "@/components/ui/google-maps-autocomplete";
+import { GoogleMapsDisplay } from "@/components/ui/google-maps-display";
+import { LocationCoordinates, AddressDetails } from "@/lib/google-maps";
 
 interface EditPropertyFormProps {
   property: Property;
@@ -31,6 +34,8 @@ export default function EditPropertyForm({ property }: EditPropertyFormProps) {
   const router = useRouter();
   const auth = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedCoordinates, setSelectedCoordinates] =
+    useState<LocationCoordinates | null>((property as any).coordinates || null);
 
   const form = useForm<PropertyData>({
     resolver: zodResolver(propertyDataSchema),
@@ -67,8 +72,52 @@ export default function EditPropertyForm({ property }: EditPropertyFormProps) {
       contactPhone: property.contactPhone,
       amenities: property.amenities || [],
       houseRules: property.houseRules || [],
+      coordinates: (property as any).coordinates || undefined,
+      addressDetails: (property as any).addressDetails || undefined,
     },
   });
+
+  // Watch coordinates from form to ensure map updates
+  const formCoordinates = form.watch("coordinates");
+
+  // Sync form coordinates with local state
+  useEffect(() => {
+    if (formCoordinates && !selectedCoordinates) {
+      setSelectedCoordinates(formCoordinates);
+    }
+  }, [formCoordinates, selectedCoordinates]);
+
+  const handlePlaceSelect = (
+    location: string,
+    coordinates: LocationCoordinates,
+    addressDetails: AddressDetails
+  ) => {
+    // Update form values
+    form.setValue("location", location);
+    form.setValue("coordinates", coordinates);
+    form.setValue("addressDetails", addressDetails);
+
+    // Update local state for map display immediately
+    setSelectedCoordinates(coordinates);
+
+    // Force form to trigger re-render
+    form.trigger();
+  };
+
+  const handleApplyLocation = () => {
+    // Force the map to update by triggering a re-render
+    const currentLocation = form.watch("location");
+    const currentCoordinates = form.watch("coordinates");
+
+    if (currentLocation && currentCoordinates) {
+      // Force update by clearing and setting coordinates again
+      setSelectedCoordinates(null);
+      setTimeout(() => {
+        setSelectedCoordinates(currentCoordinates);
+        form.trigger();
+      }, 100);
+    }
+  };
 
   const onSubmit = async (data: PropertyData) => {
     setIsSubmitting(true);
@@ -354,19 +403,16 @@ export default function EditPropertyForm({ property }: EditPropertyFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="location">Location *</Label>
-              <Input
-                id="location"
-                {...form.register("location")}
-                className={
-                  form.formState.errors.location ? "border-destructive" : ""
-                }
+              <GoogleMapsAutocomplete
+                value={form.watch("location")}
+                onChange={(value) => form.setValue("location", value)}
+                onPlaceSelect={handlePlaceSelect}
+                onApplyLocation={handleApplyLocation}
+                placeholder="Enter property address"
+                label="Location *"
+                error={form.formState.errors.location?.message}
+                showApplyButton={true}
               />
-              {form.formState.errors.location && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.location.message}
-                </p>
-              )}
             </div>
           </div>
 
@@ -403,27 +449,60 @@ export default function EditPropertyForm({ property }: EditPropertyFormProps) {
           </div>
         </TabsContent>
 
-        <TabsContent value="location" className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="location">Location *</Label>
-            <Input
-              id="location"
-              {...form.register("location")}
-              className={
-                form.formState.errors.location ? "border-destructive" : ""
-              }
-              placeholder="Enter property location (e.g., Dubrovnik, Croatia)"
+        <TabsContent value="location" className="space-y-6">
+          <div className="space-y-4">
+            <GoogleMapsAutocomplete
+              value={form.watch("location")}
+              onChange={(value) => form.setValue("location", value)}
+              onPlaceSelect={handlePlaceSelect}
+              onApplyLocation={handleApplyLocation}
+              placeholder="Enter property address"
+              label="Property Address *"
+              error={form.formState.errors.location?.message}
+              showApplyButton={true}
             />
-            {form.formState.errors.location && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.location.message}
-              </p>
-            )}
             <p className="text-xs text-muted-foreground">
-              Enter the general location of the property (city, region,
-              country).
+              Start typing an address to see autocomplete suggestions. The map
+              will update automatically.
             </p>
           </div>
+
+          <div className="space-y-2">
+            <Label>Property Location Preview</Label>
+            {selectedCoordinates || formCoordinates ? (
+              <GoogleMapsDisplay
+                key={`map-${selectedCoordinates?.lat}-${selectedCoordinates?.lng}-${formCoordinates?.lat}-${formCoordinates?.lng}`}
+                coordinates={selectedCoordinates || formCoordinates!}
+                address={form.watch("location")}
+                height="400px"
+                className="border rounded-lg overflow-hidden"
+              />
+            ) : (
+              <div className="h-[400px] border rounded-lg bg-muted flex items-center justify-center">
+                <p className="text-muted-foreground">
+                  Select an address to see the map
+                </p>
+              </div>
+            )}
+          </div>
+
+          {form.watch("coordinates") && (
+            <div className="space-y-2">
+              <Label>Coordinates</Label>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="p-3 bg-muted rounded-lg">
+                  <span className="font-medium">Latitude:</span>
+                  <br />
+                  {form.watch("coordinates")?.lat.toFixed(6)}
+                </div>
+                <div className="p-3 bg-muted rounded-lg">
+                  <span className="font-medium">Longitude:</span>
+                  <br />
+                  {form.watch("coordinates")?.lng.toFixed(6)}
+                </div>
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="policies" className="space-y-4">

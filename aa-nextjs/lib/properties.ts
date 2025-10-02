@@ -8,6 +8,19 @@ export interface Property {
   slug: string;
   description: string;
   location: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+  addressDetails?: {
+    streetNumber?: string;
+    route?: string;
+    locality?: string;
+    administrativeAreaLevel1?: string;
+    country?: string;
+    postalCode?: string;
+    formattedAddress?: string;
+  };
   propertyType: string;
   bedrooms: number;
   bathrooms: number;
