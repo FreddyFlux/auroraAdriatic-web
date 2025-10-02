@@ -8,6 +8,12 @@ export const eventDataSchema = z
       .string()
       .min(10, "Description must contain at least 10 characters."),
     location: z.string().min(3, "Location must contain at least 3 characters."),
+    coordinates: z
+      .object({
+        lat: z.number(),
+        lng: z.number(),
+      })
+      .optional(),
     startDate: z.date({
       required_error: "Start date is required.",
     }),

@@ -26,6 +26,7 @@ import {
 import { toast } from "sonner";
 import { PlusCircleIcon } from "lucide-react";
 import { createEvent } from "./action";
+import { LocationInput } from "@/components/ui/location-input";
 
 // Simple client-side slug generation for preview (server will validate)
 const generateSlug = (title: string): string => {
@@ -42,6 +43,10 @@ type EventFormData = {
   slug: string;
   description: string;
   location: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
   startDate: Date;
   endDate: Date;
   durationDays: number;
@@ -187,19 +192,20 @@ export default function NewEventForm() {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  placeholder="Enter event location"
-                  {...form.register("location")}
-                />
-                {form.formState.errors.location && (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.location.message}
-                  </p>
-                )}
-              </div>
+              <LocationInput
+                value={form.watch("location")}
+                onChange={(value) => form.setValue("location", value)}
+                onCoordinatesChange={(coordinates) =>
+                  form.setValue("coordinates", coordinates || undefined)
+                }
+                placeholder="Enter event location"
+                label="Event Location *"
+                error={form.formState.errors.location?.message}
+                showMap={true}
+                showApplyButton={true}
+                mapHeight="250px"
+                initialCoordinates={form.watch("coordinates")}
+              />
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
